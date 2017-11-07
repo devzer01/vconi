@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "main:main.c">
+         <PersistentStrings>
+            <PersistentString
+               value = "row">
+            </PersistentString>
+            <PersistentString
+               value = "words2">
+            </PersistentString>
+            <PersistentString
+               value = "words[0][0] == words2[0][0]">
+            </PersistentString>
+            <PersistentString
+               value = "words[0][0]">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>
