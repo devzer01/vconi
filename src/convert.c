@@ -2,7 +2,7 @@
 // Created by nayana on 11/6/17.
 //
 
-#include "convert.h"
+#include "../convert/convert.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>

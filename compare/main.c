@@ -93,10 +93,14 @@ int resetptr(unsigned char * ptr) {
         int word2_length = row;
         close(fp2);
         int match = 0;
+        unsigned char matching[100][2][MAX_WORD_SIZE];
         for (int x = 0; x < word_length; x++) {
             if (words[x][0] == 0x00) continue;
             for (int y = 0; y < word2_length; y++) {
+                if (words[y][0] == 0x00) continue;
                 if (memcmp(words[x], words2[y], MAX_WORD_SIZE) == 0) {
+                    memcpy(matching[match][0], words[x], MAX_WORD_SIZE);
+                    memcpy(matching[match][1], words2[y], MAX_WORD_SIZE);
                     match++;
                     break;
                 }
@@ -104,5 +108,16 @@ int resetptr(unsigned char * ptr) {
         }
         int pmatch = (match * 100) / word_length;
         printf("matches %d out of %d percent %d%% \n",  match, word_length, pmatch);
+        fp1 = open("p1.txt", O_WRONLY | O_CREAT | S_IRWXU );
+        fp2 = open("p2.txt", O_WRONLY | O_CREAT | S_IRWXU );
+        for (int i = 0; i < 100; i++) {
+            if (*matching[i][0] == 0x00) break;
+            dprintf(fp1, "%s\n", matching[i][0]);
+            dprintf(fp2, "%s\n", matching[i][1]);
+            dprintf(1, "1:%s:%s:0\n", matching[i][0], matching[i][1]);
+        }
+        close(fp1);
+        close(fp2);
+
         return 0;
 }

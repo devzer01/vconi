@@ -14,6 +14,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <getopt.h>
+
+unsigned char lang = 0x00;
 
 static const unsigned char beng[128] = {
     0x00,
@@ -423,7 +426,15 @@ int numberOfBytesInChar(unsigned char val) {
 
 int charindex(unsigned char ch) {
     for (int idx = 0 ; idx < 128; idx++) {
-        if (deva[idx] == ch) return idx;
+        switch (lang) {
+            case 'd':
+                if (deva[idx] == ch) return idx;
+                break;
+            case 'b':
+                if (beng[idx] == ch) return idx;
+                break;
+        }
+
     }
     return 0;
 }
@@ -497,7 +508,21 @@ int backward(int fp, unsigned char *ob)
     unsigned char ch = 0x0;
     unsigned int chars = 0;
     unsigned char buff[3] = {0x00, 0x00, 0x00};
-    
+
+    unsigned char b11 = 0x00;
+    unsigned char b12 = 0x00;
+
+    switch (lang) {
+        case 'd':
+            b11 = 0xa4;
+            b12 = 0xa5;
+            break;
+        case 'b':
+            b11 = 0xa6;
+            b12 = 0xa7;
+            break;
+    }
+
     while(0 != read(fp, &ch, 1)) {
         
         if (ch < 0x80) {
@@ -507,10 +532,11 @@ int backward(int fp, unsigned char *ob)
         }
         
         buff[0] = 0xe0;
-        buff[1] = 0xa4;
+        buff[1] = b11;
         buff[2] = charindex(ch);
         if (buff[2] > 0x40) {
-            buff[1] = 0xa5;
+            buff[2] -= 0x40;
+            buff[1] = b12;
         }
         buff[2] += 0x80;
         
@@ -529,25 +555,70 @@ int backward(int fp, unsigned char *ob)
 
 int main(int argc, char **argv)
 {
-    const char *sf = argv[1];
-    const char *of = argv[2];
-    
+    int option = 0;
+    unsigned char opt[4][2] = {"l:", "d:", "f:", "t:"};
+    int optidx = 0;
+
+    unsigned char direct = 0x00;
+    unsigned char *sf = 0x00;
+    unsigned char *of = 0x00;
+    while(-1 != (option = getopt(argc, argv, opt[optidx]))) {
+        switch (*opt[optidx]) {
+            case 'l':
+                lang = *optarg;
+                break;
+            case 'd':
+                direct = *optarg;
+                break;
+            case 'f':
+                sf = (unsigned char *) malloc(sizeof(unsigned char) * strlen(optarg));
+                strcpy(sf, optarg);
+                break;
+            case 't':
+                of = (unsigned char *) malloc(sizeof(unsigned char) * strlen(optarg));
+                strcpy(of, optarg);
+                break;
+        }
+        optidx++;
+    }
+
+    if (lang == 0x00 || sf == 0x00 || of == 0x00 || direct == 0x00 ) {
+        dprintf(2, "required params l f t\n");
+        exit(-1);
+    }
+
     int fp = open(sf, O_RDONLY);
+    if (fp == -1) {
+        dprintf(2, "unable to open %s \n", sf);
+        exit(-1);
+    }
     
     struct stat *statbuf = (struct stat *) malloc(sizeof(struct stat));
     fstat(fp, statbuf);
     long long allocsize = (statbuf->st_size * 3);
-    dprintf(2, "allocated %lld bytes \n", allocsize);
+    dprintf(2, "allocated %lld bytes for file %s \n", allocsize, sf);
     unsigned char *ob = (unsigned char *) malloc(sizeof(char) * allocsize);
     unsigned char *ptrob = ob;
-    
-    //forward(fp, ob);
-    int chars = backward(fp, ob);
-    
+
+    int chars = 0;
+
+    switch (direct){
+        case 'f':
+            chars = forward(fp, ob);
+            break;
+        case 'b':
+            chars = backward(fp, ob);
+            break;
+    }
+
     close(fp);
     
-    fp = open(of, O_WRONLY | O_CREAT | O_TRUNC);
-    write(fp, ptrob, 6);
+    fp = open(of, O_WRONLY | O_CREAT | S_IRWXU );
+    if (fp == -1) {
+        dprintf(2, "error creating output file %s\n", of);
+        exit(-1);
+    }
+    write(fp, ptrob, chars);
     close(fp);
     
     return 0;
