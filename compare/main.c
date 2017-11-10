@@ -41,11 +41,9 @@ int resetptr(unsigned char * ptr) {
         resetptr(current);
         int row = 0;
         int s = 0;
-        while(0 != read(fp1, &cursor, 1)) {
-            //dprintf(2, "%#02x ", cursor);
+        while(0 < read(fp1, &cursor, 1)) {
             switch (cursor) {
                 case 0xa:
-                    //dprintf(2, "line break at s \n", s);
                     memcpy(&words[row], current, s);
                     resetptr(current);
                     row++;
@@ -72,7 +70,7 @@ int resetptr(unsigned char * ptr) {
         cursor = 0x00;
         row = 0;
         resetptr(current);
-        while(0 != read(fp2, &cursor, 1)) {
+        while(0 < read(fp2, &cursor, 1)) {
             switch (cursor) {
                 case 0x0a:
                     memcpy(&words2[row], current, s);
@@ -106,14 +104,12 @@ int resetptr(unsigned char * ptr) {
                 }
             }
         }
-        int pmatch = (match * 100) / word_length;
-        printf("matches %d out of %d percent %d%% \n",  match, word_length, pmatch);
-        fp1 = open("p1.txt", O_WRONLY | O_CREAT | S_IRWXU );
-        fp2 = open("p2.txt", O_WRONLY | O_CREAT | S_IRWXU );
+        //int pmatch = (match * 100) / word_length;
+        printf("matches %d out of %d percent  \n",  match, word_length);
+        fp1 = open("matches.txt", O_WRONLY | O_CREAT | O_TRUNC,  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH );
         for (int i = 0; i < 100; i++) {
             if (*matching[i][0] == 0x00) break;
             dprintf(fp1, "%s\n", matching[i][0]);
-            dprintf(fp2, "%s\n", matching[i][1]);
             dprintf(1, "1:%s:%s:0\n", matching[i][0], matching[i][1]);
         }
         close(fp1);
