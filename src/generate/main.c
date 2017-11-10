@@ -22,63 +22,44 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
-    const unsigned char *lang = *optarg;
+    const unsigned char *lang = optarg;
     int number = (int)strtol(lang, NULL, 16);
 
-    /**
-     * 1	7	U+0000	U+007F	0xxxxxxx
-2	11	U+0080	U+07FF	110xxxxx	10xxxxxx
-3	16	U+0800	U+FFFF	1110xxxx	10xxxxxx	10xxxxxx
-4	21	U+10000	U+10FFFF	11110xxx	10xxxxxx	10xxxxxx	10xxxxxx
-     */
+    int consonant = 0x0;
+    option = getopt(argc, argv, "c:");
+    if (option != -1) {
+        const unsigned char *chrconst = optarg;
+        consonant = (int)strtol(chrconst, NULL, 16);
+    }
 
+    unsigned char *basechar = (unsigned char *) malloc(sizeof(unsigned char) * 4);
+    basechar = getuchar(consonant, basechar);
 
-    unsigned char *buffer = (unsigned  char *) malloc(sizeof(unsigned char) * (bytes * 3) * 0x80);
+    unsigned char *zwj = (unsigned char *) malloc(sizeof(unsigned char) * 4);
+    sprintf(zwj, "%c%c%c", 0xe2, 0x80, 0x8b);
+
+    unsigned char *buffer = (unsigned  char *) malloc(sizeof(unsigned char) * 3 * 0xFF);
     unsigned char *ptr = buffer;
 
     for (int i=number; i < (number + 0x80); i++) {
         int cl = ucdn_get_general_category(i);
         if (cl == 2 || cl == 13) continue;
-        if (bytes == 1) {
+        if (i <= 0x7f) {
             *buffer++ = i;
             continue;
         }
 
-        for (int p=bytes - 1; p >= 0; p--) {
-            result[p] = 0;
+        unsigned char *uchar = (unsigned char *) malloc(sizeof(unsigned char) * 4);
+        int32_t point = i;
+        uchar = getuchar(point, uchar);
+
+        if ((cl == 10 || cl == 12) && consonant != 0x00) {
+            printf("%s%s%s", basechar, uchar, zwj);
+        } else {
+            printf("%s", uchar);
         }
 
-        int izwj = 0;
-        unsigned char *uchar = (unsigned char *) malloc(sizeof(unsigned char) * 3);
-        unsigned char *ptr = uchar;
-        *uchar++ = b0;
-        *uchar++ = b1;
-        b2 = (i + 0x80 + constant);
-        *uchar = b2;
-
-
-        if (i == 0x3f) {
-            b1++;
-            constant = -0x40;
-        }
-
-
-
-        unsigned char *line = (unsigned char *) malloc(sizeof(unsigned char) * 10);
-        sprintf(line, "(%d) 0x%04x ", i, codepoint);
-        if (cl == 10 || cl == 12) {
-            izwj = 1;
-            sprintf(line, "%s%c%c%c", line, 0xe0, 0xa6, vconsonant);
-        }
-
-        if (izwj == 1) {
-            sprintf(line, "%s%c%c%c", line, 0xe2, 0x80, 0x8b); //0xE2 0x80 0x8B
-            izwj = 0;
-        }
-        sprintf(line, "%s%s", line, ptr);
-
-        printf("%s%c", line, 0xa);
-
+        printf("%c", 0xa);
     }
 
     return 0;

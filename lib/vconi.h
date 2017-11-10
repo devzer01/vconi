@@ -50,7 +50,14 @@ range *getcodeparams(int32_t number, range *ptr)
     return ptr;
 }
 
-const unsigned char *getuchar(int32_t codepoint, unsigned char *buf)
+/**
+ * code point to utf8
+ *
+ * @param codepoint
+ * @param buf
+ * @return
+ */
+unsigned char *getuchar(int32_t codepoint, unsigned char *buf)
 {
     range *ptr = (range *) malloc(sizeof(range));
     int32_t chr = 0;
