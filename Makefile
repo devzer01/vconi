@@ -1,11 +1,14 @@
-all: convert/main.c compare/main.c generate/main.c
-	gcc -g3 -O0 -o ./bin/generate ./generate/main.c lib/ucdn/ucdn.c -Ilib/
-	gcc -g3 -O0 -o ./bin/convert ./convert/main.c lib/ucdn/ucdn.c -Ilib/  -fno-stack-protector
-	gcc -g3 -O0 -o ./bin/compare ./compare/main.c -fno-stack-protector
+all: src/convert src/compare src/generate
+	gcc -g3 -O0 -o ./bin/generate ./src/generate/main.c lib/ucdn/ucdn.c -Ilib/
+	gcc -g3 -O0 -o ./bin/convert ./src/convert/main.c lib/ucdn/ucdn.c -Ilib/  -fno-stack-protector
+	gcc -g3 -O0 -o ./bin/compare ./src/compare/main.c -fno-stack-protector
 
-test: convert
-	./convert test/test.txt
+tests: test/libs_test.c
+	gcc -g3 -O0 -o ./test/bin/libs_test ./test/libs_test.c -fno-stack-protector -Ilib/
+
+test: src/convert
+	./bin/convert data/test/test.txt
 
 debug:
-	cp debug.script ~/.gdbinit
+	cp scripts/gdb/debug.script ~/.gdbinit
 	gdb ./convert

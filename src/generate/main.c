@@ -31,20 +31,7 @@ int main(int argc, char **argv)
 3	16	U+0800	U+FFFF	1110xxxx	10xxxxxx	10xxxxxx
 4	21	U+10000	U+10FFFF	11110xxx	10xxxxxx	10xxxxxx	10xxxxxx
      */
-    int bytes = 1;
-    int mask[4] = {0x00, 0x00, 0x00, 0x00};
-    int result[4] = {0x00, 0x00, 0x00, 0x00};
-    //lets calculate 1st 2nd and 3rd
-    if (number >= 0x80 && number <= 0x7ff) {
-        bytes = 2;
-        mask[4] = {0b00011111, 0b00111111, 0x00, 0x00};
-    } else if (number >= 0x800 && number <= 0xffff) {
-        bytes = 3;
-        mask[4] = {0b00001111, 0b00111111, 0b00111111, 0x00};
-    } else if (number >= 0x10000 && number <= 0x10ffff) {
-        bytes = 4;
-        mask[4] = {0b00000111, 0b00111111, 0b00111111, 0b00111111};
-    }
+
 
     unsigned char *buffer = (unsigned  char *) malloc(sizeof(unsigned char) * (bytes * 3) * 0x80);
     unsigned char *ptr = buffer;
@@ -58,7 +45,7 @@ int main(int argc, char **argv)
         }
 
         for (int p=bytes - 1; p >= 0; p--) {
-            result[p] = 
+            result[p] = 0;
         }
 
         int izwj = 0;
