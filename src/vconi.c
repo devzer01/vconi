@@ -1,34 +1,27 @@
 //
-// Created by nayana on 11/10/17.
+// Created by nayana on 11/11/17.
 //
 
-#ifndef VCONI_VCONI_H
-#define VCONI_VCONI_H
-//https://stackoverflow.com/questions/1675351/typedef-struct-vs-struct-definitions
-#include <stdint.h>
-#include <string.h>
-#include <stdio.h>
-#include <malloc.h>
-typedef struct range {           //bukebukeka:sexyorio
-    unsigned char bsize;
-    int32_t mask;
-    int32_t ch;
-} range;
+#include "vconi.h"
 
-#endif //VCONI_VCONI_H
-
-int32_t getCodePoint(unsigned char *buffer) {
+/**
+ *
+ * @param buffer
+ * @return int32_t codepoint
+ */
+int32_t utf82codepoint(unsigned char *buffer) {
     int32_t codepoint = (0b00111111 & buffer[2]);
     codepoint = codepoint + ((0b00111111 & buffer[1]) << 6);
     codepoint = codepoint + ((0b00001111 & buffer[0]) << 12);
     return codepoint;
 }
 
-
-
-#define CONSEQ_CHAR 0b10000000
-#define NCONSEQ_CHAR 0b00111111
-
+/**
+ *
+ * @param number
+ * @param ptr
+ * @return
+ */
 range *getcodeparams(int32_t number, range *ptr)
 {
 
@@ -78,6 +71,3 @@ unsigned char *getuchar(int32_t codepoint, unsigned char *buf)
     }
     return buf;
 }
-
-
-

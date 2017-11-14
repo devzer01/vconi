@@ -54,7 +54,7 @@ int main(int argc, char **argv)
         uchar = getuchar(point, uchar);
 
         if ((cl == 10 || cl == 12) && consonant != 0x00) {
-            printf("%s%s%s", basechar, uchar, zwj);
+            printf("%s%s", basechar, uchar);
         } else {
             printf("%s", uchar);
         }
