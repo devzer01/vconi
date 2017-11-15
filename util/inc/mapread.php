@@ -303,21 +303,23 @@ class Runner {
                 $comment = "";
                 $meta = $this->ucd->item($point);
                 $index = array_search($i, $this->cons);
+                $ofs = hexdec($meta[0]);
+                $oidx = ($ofs - $this->range[0]);
+                $dcomment = "";
                 if ($index === FALSE) {
                     $mark = "*";
                     if ($meta[2][0] == "M") $mark = "'";
                     else if ($meta[2][0] == "P") $mark = ".";
                     else if ($meta[2][0] == "N") $mark = "#";
                     else if ($meta[2][0] == "S") $mark = "%";
-                    $comment = sprintf("%s %d %s %s %d", $meta[0], hexdec($meta[0]), $meta[2], $meta[1], $index);
-                    if ($debug) fprintf($fp, "%s %s * * * \n", $mark, $comment);
+                    $comment = sprintf("[%s] %s %d %s %s %d", $oidx, $meta[0], hexdec($meta[0]), $meta[2], $meta[1], $index);
+                    if ($debug) $dcomment = sprintf("%s %s * * * ", $mark, $comment);
                 } else {
-                    $comment = str_pad(sprintf("%s %s ", $meta[0], $this->header[0][$index]), 18, " ",STR_PAD_RIGHT) ;
+                    $comment = str_pad(sprintf("[%s] %s %s ", $oidx, $meta[0], $this->header[0][$index]), 18, " ",STR_PAD_RIGHT) ;
                     $comment = sprintf("%s %s %d %s ", $comment, $meta[1], hexdec($meta[0]), $meta[2]);
-                    if ($debug) fprintf($fp, "+ %s , %s, %s\n", $comment, $this->header[1][$index], dechex($this->cons[$index]));
+                    if ($debug) $dcomment = sprintf("+ %s , %s, %s", $comment, $this->header[1][$index], dechex($this->cons[$index]));
                 }
-                $ofs = hexdec($meta[0]);
-                $oidx = ($ofs - $this->range[0]);
+                if ($debug) fprintf($fp, "%s (%s) = [ %s , %s ..  ] %s \n", $oidx + 1, dechex($oidx + 1), $this->header[1][$index], dechex($oidx + ($this->range[0] & 0xff)), $dcomment);
                 $this->data[$oidx + 1] = [$this->header[1][$index], dechex($oidx + ($this->range[0] & 0xff)), 0x00, 0x00, $comment];
             } else {
                 if (array_search($i, $this->cons) !== FALSE) {
@@ -339,11 +341,11 @@ class Runner {
         $mark = ",";
         //$end_r1 = ($this->data[0][1] >> 8);
         //$end_r2 = ($this->data[0][1] & 0x00ff);
-        $header = sprintf("#ifndef VCONI_%s_H\n#define VCONI_%s_H\n\n", $this->name, $this->name);
+        $header = sprintf("#ifndef VCONI_%s_H\n#define VCONI_%s_H\n\n", strtoupper($this->name), strtoupper($this->name));
         fprintf($fp, $header);
         fprintf($fp, "const unsigned char %s_config[%d] = { 0x%s, 0x%s, 0x%s, 0x%s,\n", strtolower($this->code), ($size + 2) * 4, $this->frmt($start_r1), $this->frmt($start_r2), $this->frmt($size), $this->version);
-        for ($i = 1; $i < count($this->data); $i++) {
-            if ($i === count($this->data) - 1) $mark = "";
+        for ($i = 1; $i < $size; $i++) {
+            if ($i === $size - 1) $mark = "";
             if (isset($this->data[$i])) {
                 $v = $this->data[$i];
                 fprintf($fp,"0x%s, 0x%s, 0x00, 0x00%s //%s\n", $this->frmth($v[0]), $this->frmth($v[1]), $mark, $v[4]);

@@ -36,3 +36,6 @@ debug:
 save:
 	git commit -m "saving home work" .
 	git push -u origin master
+
+report:
+	./scripts/alphabets.sh
