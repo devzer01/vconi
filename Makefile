@@ -21,6 +21,9 @@ tests:
 test: src/convert
 	./bin/convert data/test/test.txt
 
+headers: util/conf/map2.csv
+	cd util/inc/; php all.php
+
 debug:
 	cp scripts/gdb/debug.script ~/.gdbinit
 	gdb ./convert
