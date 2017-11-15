@@ -6,10 +6,45 @@
 #include <string.h>
 #include <stdio.h>
 #include <malloc.h>
+#include "charmap.h"
 #ifndef VCONI_VCONI_H
 #define VCONI_VCONI_H
 
+/**
+  *
+  */
+ typedef struct range {
+     unsigned char bsize;
+     int32_t mask;
+     int32_t ch;
+ } range;
 
+#define CONSEQ_CHAR  0b10000000
+#define NCONSEQ_CHAR 0b00111111
+
+
+/**
+  *
+  * @param buffer
+  * @return
+  */
+int32_t utf82codepoint(unsigned char *buffer);
+
+ /**
+  *
+  * @param number
+  * @param ptr
+  * @return
+  */
+range *getcodeparams(int32_t number, range *ptr);
+
+ /**
+  *
+  * @param codepoint
+  * @param buf
+  * @return
+  */
+unsigned char *getuchar(int32_t codepoint, unsigned char *buf);
 
 
 

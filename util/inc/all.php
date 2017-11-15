@@ -26,30 +26,30 @@ $lang_array = [
 	['0XD','1A00','1A7F','Lontara', 'lon']
 ];
 
-$struct1 = "typedef struct b8e_config {\n";
-$includes = [];
+//$struct1 = "typedef struct b8e_config {\n";
+//$includes = [];
 $m = [];
 foreach($lang_array as $v) {
     $runner = new Runner($v[0], strtolower($v[3]), strtolower($v[4]));
     $runner->build_map(false);
-    $runner->format_header("../../src/lang/" . strtolower($v[3]) . ".h");
-    $m[] = sprintf("\tconst unsigned char *%s;", strtolower($v[3]));
-    $includes[] = sprintf("#include \"%s.h\"", strtolower($v[3]));
+    $runner->format_header("../../src/map/lang/" . strtolower($v[3]) . ".h");
+  //  $m[] = sprintf("\tconst unsigned char *%s;", strtolower($v[3]));
+  //  $includes[] = sprintf("#include \"%s.h\"", strtolower($v[3]));
 }
-$struct2 = "\n} b8e_config;\n";
+//$struct2 = "\n} b8e_config;\n";
 
-file_put_contents("../../src/vconi_gen.h", $struct1 . implode("\n", $m) . $struct2);
+//file_put_contents("../../src/vconi_gen.h", $struct1 . implode("\n", $m) . $struct2);
 
-$load = "b8e_map *map_load(b8e_config *config, LANGUAGE lang, b8e_map *map) {\n\tswitch (lang) {\n\t\tcase L_BASE:\n\t\t\tbreak;\n";
+//$load = "b8e_map *map_load(b8e_config *config, LANGUAGE lang, b8e_map *map) {\n\tswitch (lang) {\n\t\tcase L_BASE:\n\t\t\tbreak;\n";
 
-$init = "b8e_map *map_init(b8e_config *config) {\n\tb8e_map *map = (b8e_map *) malloc(sizeof(b8e_map));\n";
+/*$init = "b8e_map *map_init(b8e_config *config) {\n\tb8e_map *map = (b8e_map *) malloc(sizeof(b8e_map));\n";
 foreach($lang_array as $v) {
     $init .= "\tconfig->" . strtolower($v[3]) . " = (const unsigned char *) &" . strtolower($v[4]) . "_config;\n";
     $load .= "\t\tcase L_" . strtoupper($v[3]) . ":\n\t\t\tmap = map_parse(config->" . strtolower($v[3]) .", map);\n\t\t\tbreak;\n";
 }
 $init .= "};\n";
-$load .= "\t}\n\treturn map;\n}\n";
+$load .= "\t}\n\treturn map;\n}\n";*/
 
-file_put_contents("../../src/map/charmap_gen.h", implode("\n", $includes) . "\n\n" . $init . "\n" . $load);
+//file_put_contents("../../src/map/charmap_gen.h", implode("\n", $includes) . "\n\n" . $init . "\n" . $load);
 
 

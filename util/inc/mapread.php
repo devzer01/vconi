@@ -288,6 +288,10 @@ class Runner {
     function frmt($inp) {
         return str_pad(strtoupper(dechex($inp)), 2, "0", STR_PAD_LEFT);
     }
+
+    function frmth($inp) {
+        return str_pad(strtoupper($inp), 2, "0", STR_PAD_LEFT);
+    }
     
     public function build_map($debug = false)
     {
@@ -342,7 +346,7 @@ class Runner {
             if ($i === count($this->data) - 1) $mark = "";
             if (isset($this->data[$i])) {
                 $v = $this->data[$i];
-                fprintf($fp,"0x%s, 0x%s, 0x00, 0x00%s //%s\n", $this->frmt($v[0]), $this->frmt($v[1]), $mark, $v[4]);
+                fprintf($fp,"0x%s, 0x%s, 0x00, 0x00%s //%s\n", $this->frmth($v[0]), $this->frmth($v[1]), $mark, $v[4]);
             } else {
                 fprintf($fp,"0x00, 0x00, 0x00, 0x00%s //%s\n", $mark, "reserved-space");
             }

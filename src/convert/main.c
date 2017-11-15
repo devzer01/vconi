@@ -17,10 +17,6 @@
 #include <getopt.h>
 #include "vconi.h"
 #include <stdint.h>
-#include "../lang/tamil.h"
-#include "../lang/bengali.h"
-#include "../lang/devanagari.h"
-#include "sinhala.h"
 #include "charmap.h"
 
 extern int ucdn_get_general_category(uint32_t code);
@@ -125,17 +121,72 @@ int usage()
 
 int get_language(unsigned char lang) {
     switch (lang) {
-        case 'd':
-            return L_DEVANAGARI;
-        case 'b':
+        case 0xF:
+           return L_ODIA;
+           break;
+        case 0x1:
+            return L_ASSAMESE;
+            break;
+        case 0x3:
             return L_BENGALI;
-        case 't':
-            return L_TAMIL;
-        case 's':
+            break;
+        case 0x6:
+            return L_DEVANAGARI;
+            break;
+        case 0x7:
+            return L_GUJARATI;
+            break;
+        case 0x8:
+            return L_GURMUKHI;
+            break;
+        case 0x16:
+            return L_TIBETAN;
+            break;
+        case 0x4:
+            return L_BRAHMI;
+            break;
+        case 0x14:
+            return L_TELUGU;
+            break;
+        case 0xA:
+            return L_KANNADA;
+            break;
+        case 0x10:
             return L_SINHALA;
-        case 'm':
+            break;
+        case 0xE:
             return L_MALAYALAM;
+            break;
+        case 0x13:
+            return L_TAMIL;
+            break;
+        case 0x5:
+            return L_BURMESE;
+            break;
+        case 0xB:
+            return L_KHMER;
+            break;
+        case 0x15:
+           return L_THAI;
+           break;
+        case 0xC:
+          return L_LAO;
+          break;
+        case 0x2:
+            return L_BALINESE;
+            break;
+        case 0x9:
+            return L_JAVANESE;
+            break;
+        case 0x11:
+            return L_SUNDANESE;
+            break;
+        case 0xD:
+            return L_LONTARA;
+            break;
         default:
+            map_print();
+            exit(-1);
             break;
     }
     return -1;
@@ -150,11 +201,13 @@ int main(int argc, char **argv)
     unsigned char direct = 0x00;
     unsigned char *sf = 0x00;
     unsigned char *of = 0x00;
+    unsigned char number;
 
     while(-1 != (option = getopt(argc, argv, opt[optidx]))) {
         switch (*opt[optidx]) {
             case 'l':
-                lang = get_language(*optarg);
+                number = (unsigned char)strtol(optarg, NULL, 16);
+                lang = get_language(number);
                 break;
             case 'd':
                 direct = *optarg;
