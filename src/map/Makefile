@@ -2,11 +2,13 @@
 include_path = ${BASE}/src
 
 lib: charmap.c charmap.h
-	gcc -c -g3 -O0 -o charmap.o charmap.c -I$(include_path)
+	gcc -c -g3 -O0 -o charmap.o charmap.c
 
-test: lib tests/test.c
-	gcc -g3 -O0 -o test tests/test.c ${BASE}/src/vconi.o charmap.o -I$(include_path) -I${BASE}/src/map
+test: lib test.c
+	gcc -c -g3 -O0 -o test.o test.c
 
+all: test lib
+	gcc -o test test.o charmap.o
 #bin: src/convert
 #	./bin/convert data/test/test.txt
 

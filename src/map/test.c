@@ -1,7 +1,6 @@
 //
 // Created by nayana on 11/11/17.
 //
-#include "vconi.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -14,6 +13,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <stdint.h>
+#include "charmap_gen.h"
 #include "charmap.h"
 #include "test_config.h"
 
