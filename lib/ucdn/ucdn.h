@@ -294,7 +294,7 @@ static const UCDRecord *get_ucd_record(uint32_t code);
 #define UCDN_BIDI_CLASS_ON 18
 #define UCDN_BIDI_CLASS_LRI 19
 #define UCDN_BIDI_CLASS_RLI 20
-#define UCDN_BIDI_CLASS_FSI 21
+#define UCDN_BIDI_CLASS_FSI 21l
 #define UCDN_BIDI_CLASS_PDI 22
 
 #define UCDN_BIDI_PAIRED_BRACKET_TYPE_OPEN 0

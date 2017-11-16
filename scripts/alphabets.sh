@@ -12,26 +12,7 @@ do
    ./bin/convert -l $ID -d b -f data/output/$NAME-$ID-alpha.txt8 -t data/output/$NAME-$ID-alpha.txt-re
    diff data/output/$NAME-$ID-alpha.txt-re data/output/$NAME-$ID-alpha.txt > data/report/$NAME-basic.txt
    AGGR=`wc -l data/report/$NAME-basic.txt`
-    echo "$NAME $AGGR " >> data/report/all.txt
+    echo "$NAME,$AGGR " >> data/report/all.txt
 done
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+cat data/report/all.txt

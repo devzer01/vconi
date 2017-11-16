@@ -28,7 +28,7 @@ clean:
 	find ./ -name \*.o -exec rm {} \;
 	cd data/report && rm *
 	cd data/output && rm *
-
+	rm bin/*
 debug:
 	cp scripts/gdb/debug.script ~/.gdbinit
 	gdb ./convert
