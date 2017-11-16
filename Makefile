@@ -1,4 +1,4 @@
-all: src/convert src/compare src/generate map
+all: src/convert src/compare src/generate map lib
 	gcc -g3 -O0 -o ./bin/generate ./src/generate/main.c lib/ucdn/ucdn.o src/vconi.o -Isrc/ -Isrc/map
 	gcc -g3 -O0 -o ./bin/convert ./src/convert/main.c lib/ucdn/ucdn.c -Isrc/ src/vconi.o src/map/charmap.o -Isrc/map/ -fno-stack-protector
 	gcc -g3 -O0 -o ./bin/compare ./src/compare/main.c -fno-stack-protector
@@ -39,3 +39,8 @@ save:
 
 report:
 	./scripts/alphabets.sh
+
+textdebug:
+	cat data/input/debug.txt | tr -d '\n' | xxd -c 9 -g 3
+	./bin/convert -l 0x15 -d f -f data/input/debug.txt -t data/output/single-debug.txt && ./bin/convert -l 0x10 -d b -f data/output/single-debug.txt -t data/output/sinhala-debug.txt
+	cat data/output/sinhala-debug.txt
