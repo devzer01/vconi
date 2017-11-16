@@ -3,6 +3,9 @@ all: src/convert src/compare src/generate map lib
 	gcc -g3 -O0 -o ./bin/convert ./src/convert/main.c lib/ucdn/ucdn.c -Isrc/ src/vconi.o src/map/charmap.o -Isrc/map/ -fno-stack-protector
 	gcc -g3 -O0 -o ./bin/compare ./src/compare/main.c -fno-stack-protector
 
+udb: src/udb/main.c
+	gcc -O0 -g3 -o src/udb/udb src/udb/main.c
+
 base: src/vconi.c
 	gcc -c -g3 -O0 -o src/vconi.o src/vconi.c -Isrc/map/
 
