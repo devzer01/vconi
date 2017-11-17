@@ -29,9 +29,10 @@ headers: util/conf/map2.csv
 
 clean:
 	find ./ -name \*.o -exec rm {} \;
-	cd data/report && rm *
-	cd data/output && rm *
-	rm bin/*
+	rm bin/* 2> /dev/null; true
+	cd data/report && rm *.txt 2> /dev/null; true
+	cd data/output && rm *.txt 2> /dev/null; true
+
 debug:
 	cp scripts/gdb/debug.script ~/.gdbinit
 	gdb ./convert
