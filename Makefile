@@ -1,5 +1,4 @@
-all: src/convert src/compare src/generate map lib
-	gcc -g3 -O0 -o ./bin/generate ./src/generate/main.c lib/ucdn/ucdn.o src/vconi.o -Isrc/ -Isrc/map
+all: src/convert src/compare generate map lib udb
 	gcc -g3 -O0 -o ./bin/convert ./src/convert/main.c lib/ucdn/ucdn.c -Isrc/ src/vconi.o src/map/charmap.o -Isrc/map/ -fno-stack-protector
 	gcc -g3 -O0 -o ./bin/compare ./src/compare/main.c -fno-stack-protector
 
@@ -10,7 +9,8 @@ base: src/vconi.c
 	gcc -c -g3 -O0 -o src/vconi.o src/vconi.c -Isrc/map/
 
 generate: src/generate/main.c
-	cd src/generate && make all && make test
+	gcc -g3 -O0 -c -o src/generate/generate.o  src/generate/main.c -Isrc/ -Isrc/map
+	gcc -o bin/generate src/generate/generate.o lib/ucdn/ucdn.o src/vconi.o
 
 lib: lib/ucdn/ucdn.o
 	gcc -c -g3 -O0 -o lib/ucdn/ucdn.o lib/ucdn/ucdn.c
