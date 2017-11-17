@@ -1,4 +1,4 @@
-all: src/convert src/compare generate map lib udb
+all: base udb lib map src/convert src/compare generate
 	gcc -g3 -O0 -o ./bin/convert ./src/convert/main.c lib/ucdn/ucdn.c -Isrc/ src/vconi.o src/map/charmap.o -Isrc/map/ -fno-stack-protector
 	gcc -g3 -O0 -o ./bin/compare ./src/compare/main.c -fno-stack-protector
 

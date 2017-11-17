@@ -45,10 +45,10 @@ ucdb_row *root;
 ucdb_row *end;
 ucdb_index *idx_root;
 
-int udb_read_line(int fp, unsigned char **buffer, unsigned char (*colb)[10])
+int udb_read_line(int fp, unsigned char **buffer, unsigned char (*colb)[14])
 {
     unsigned char cursor;
-    *buffer = (unsigned char *) malloc(sizeof(unsigned char) * 100);
+    *buffer = (unsigned char *) malloc(sizeof(unsigned char) * 70);
     short length = 0;
     short col_idx = 0;
     unsigned char i = 0x0;
@@ -81,7 +81,7 @@ int udb_create()
     char run = 0x1;
     while (run == 0x1) {
         unsigned char *buf;
-        unsigned char colb[10];
+        unsigned char colb[14];
         short size = udb_read_line(fp, &buf, &colb);
         if (size == 0) {
             node->prev->next = 0x0;
