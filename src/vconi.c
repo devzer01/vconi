@@ -16,6 +16,18 @@ int32_t utf82codepoint(unsigned char *buffer) {
     return codepoint;
 }
 
+short vconi_char_length(unsigned char val) {
+    if (val < 128) {
+        return 1;
+    } else if (val < 224) {
+        return 2;
+    } else if (val < 240) {
+        return 3;
+    } else {
+        return 4;
+    }
+}
+
 /**
  *
  * @param number

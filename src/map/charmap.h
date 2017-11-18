@@ -71,6 +71,23 @@ typedef struct b8e_map {
     b8e_rec code[128];
 } b8e_map;
 
+typedef struct b8e_remap_header {
+    int size; //hash later
+    unsigned char lang;
+} b8e_remap_header;
+
+typedef struct b8e_map_node {
+    int block;
+    int offset;
+    unsigned char b8e_char;
+    int32_t codepoint;
+} b8e_map_node;
+
+typedef struct b8e_remap {
+    struct b8e_map_node *node;
+	struct b8e_remap *prev;
+	struct b8e_remap *next;
+} b8e_remap;
 
 b8e_map *map_parse(const unsigned char *map_data, b8e_map *map);
 

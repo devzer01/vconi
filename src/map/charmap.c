@@ -56,7 +56,7 @@ const b8e_rec codepoint2local(b8e_map *map, int32_t codepoint) {
 int32_t local2codepoint(b8e_map *map, unsigned char local) {
     int i = 0;
     for (i = 0; i < 128; i++) {
-        if (map->code[i].value == local) {
+        if (map->code[i].value == local && map->code[i].attributes == 0) {
             break;
         }
     }

@@ -1,8 +1,12 @@
-break convert.c:31
-run test/test.txt
+set breakpoint pending on
+file bin/convert
+#break main.c:74
+#break main.c:104
+#break main.c:308
+#break main.c:336
+run -l 0x03 -d f -f data/output/Bengali-0x03-alpha.txt -t dv.txt
+#run -l 0x03 -d b -f dv.txt -t dv.txt.re
 
 
-break generate/main.c:97 if (i > 63)
-break generate/main.c:104 if (i > 63)
-break generate/main.c:89 if (i > 63)
-run -l s
+# run
+#

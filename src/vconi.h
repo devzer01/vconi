@@ -46,7 +46,7 @@ range *getcodeparams(int32_t number, range *ptr);
   */
 unsigned char *getuchar(int32_t codepoint, unsigned char *buf);
 
-
+short vconi_char_length(unsigned char val);
 
 
 

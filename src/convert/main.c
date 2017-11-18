@@ -23,6 +23,7 @@ extern int ucdn_get_general_category(uint32_t code);
 unsigned char lang = 0x00;
 b8e_config *config;
 b8e_map *map;
+struct b8e_remap *remap;
 
 int numberOfBytesInChar(unsigned char val) {
     if (val < 128) {
@@ -42,7 +43,8 @@ int forward(int fp, unsigned char **ob, long long allocsize)
     unsigned char *ptch = &ch;
     unsigned int chars = 0;
     *ob = (unsigned char *) malloc(sizeof(unsigned char) * allocsize + (allocsize));
-
+    remap = malloc(sizeof(struct b8e_remap));
+    struct b8e_map_node *map_node = malloc(sizeof(struct b8e_map_node));
     while(0 != read(fp, ptch, 1)) {
 
         if (chars >= allocsize * 2.5) {
@@ -63,8 +65,23 @@ int forward(int fp, unsigned char **ob, long long allocsize)
         read(fp, buf+1, bytes - 1);
         int32_t codepoint = utf82codepoint(buf);
         const b8e_rec rec = codepoint2local(map, codepoint);
+#if DEBUG
+        dprintf(2, "%d - %d \n", rec.attributes, codepoint);
+#endif
+        if (rec.attributes != 0) {
+            //add to map position and original code point index
 
-        if (rec.value != 0x00) {
+            map_node->block = (chars / 64);
+            map_node->offset = (chars % 64);
+            map_node->b8e_char = rec.value;
+            map_node->codepoint = codepoint;
+            remap->node = map_node;
+            remap->next = malloc(sizeof(struct b8e_map));
+            remap->next->prev = (remap);
+            (remap) = remap->next;
+            map_node = malloc(sizeof(struct b8e_map_node));
+        }
+        if (rec.value != 0x00 && rec.value != 0xFF) {
             memcpy(*ob, &rec.value, 1);
             (*ob)++;
             chars++;
@@ -72,7 +89,7 @@ int forward(int fp, unsigned char **ob, long long allocsize)
 
         }
     }
-    
+
     return chars;
 }
 
@@ -84,24 +101,37 @@ int backward(int fp, unsigned char **ob, long long allocsize)
     unsigned char *pzwj = (unsigned char *) &zwj;
 
     *ob = (unsigned char *) malloc(sizeof(unsigned char) * allocsize + (allocsize));
-
+    if (remap != 0x0 && remap->node != 0x0) {
+        dprintf(2, "found remap hash %d", remap->node->block);
+    }
+    int bchars = 0;
     while(0 != read(fp, &ch, 1)) {
         
-        if (ch < 0x80) {
+        if (ch < 0x80 && ch != 0x2E) {
             memcpy((*ob), &ch, 1);
             (*ob)++;
             chars++;
+            bchars++;
+            continue;
+        }
+
+        if (ch == 0xFF) {
             continue;
         }
 
         int32_t codepoint = local2codepoint(map, ch);
+        if (remap != 0x00 && remap->node->block == (bchars / 64) && remap->node->offset == (bchars % 64)) {
+            codepoint = remap->node->codepoint;
+            (remap) = remap->prev;
+        }
+
         unsigned char *buff = (unsigned char *) malloc(sizeof(unsigned char) * 4);
         const unsigned char *key = (const unsigned  char *) getuchar(codepoint, buff);
-        
+
         memcpy((*ob), key, 3);
         (*ob) += 3;
         chars += 3;
-
+        bchars++;
         /*int cl = ucdn_get_general_category(codepoint);
         if (cl == 10 || cl == 12) {
             memcpy(*ob, pzwj, 3);
@@ -109,7 +139,7 @@ int backward(int fp, unsigned char **ob, long long allocsize)
             chars += 3;
         }*/
     }
-    
+    //remap->prev = 0x0;
     return chars;
 }
 
@@ -249,7 +279,9 @@ int main(int argc, char **argv)
     long long allocsize = (statbuf->st_size);
     unsigned char *ob;
     int chars = 0;
-
+    unsigned char *mapf;
+    struct b8e_map_node *node;
+    unsigned char *xbuf = malloc(sizeof(unsigned char) * 20);
     switch (direct){
         case 'f':
             allocsize = allocsize / 3 * 2.5;
@@ -258,6 +290,31 @@ int main(int argc, char **argv)
             ob = (ob - chars);
             break;
         case 'b':
+            mapf = malloc(sizeof(unsigned char *) * (strlen(sf) + 6));
+            sprintf(mapf, "%s.map", sf);
+            int mfp = open(mapf, O_RDONLY);
+            if (mfp != -1) {
+                dprintf(2, "found map file %d \n", sizeof(struct b8e_map_node));
+                struct b8e_remap_header *hdxr = malloc(sizeof(struct b8e_remap_header));
+                read(mfp, xbuf, sizeof(struct b8e_remap_header));
+                memcpy(hdxr, xbuf, sizeof(struct b8e_remap_header));
+                if (hdxr->lang == lang) {
+                    node = malloc(sizeof(struct b8e_map_node));
+                    remap = malloc(sizeof(struct b8e_remap));
+                    struct b8e_remap *r = remap;
+                    while (0 < read(mfp, xbuf, 16)) {
+                        memcpy(node, xbuf, 16);
+                        r->node = node;
+                        r->next = malloc(sizeof(struct b8e_map));
+                        r->next->prev = r;
+                        (r) = r->next;
+                        node = malloc(sizeof(struct b8e_map_node));
+                    }
+                    (remap) = r->prev;
+                }
+                //free(node); //the last allocation;
+            }
+
             allocsize = allocsize * 6;
             dprintf(2, "allocated %lld bytes for file %s \n", allocsize, sf);
             chars = backward(fp, &ob, allocsize);
@@ -267,7 +324,7 @@ int main(int argc, char **argv)
     }
 
     close(fp);
-    
+
     fp = open(of, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fp == -1) {
         dprintf(2, "error creating output file %s\n", of);
@@ -275,6 +332,26 @@ int main(int argc, char **argv)
     }
     write(fp, ob, chars);
     close(fp);
+
+    if (direct == 'f') {
+        if (remap->prev != 0x00) {
+            unsigned char *mapf = malloc(sizeof(unsigned char *) * strlen(of) + 6);
+            sprintf(mapf, "%s.map", of);
+            fp = open(mapf, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        }
+        struct b8e_remap_header hdr;
+        hdr.size=chars;
+        hdr.lang=lang;
+        write(fp, &hdr, sizeof(struct b8e_remap_header));
+        while (remap->prev != 0x0) {
+            (remap) = remap->prev;
+            struct b8e_map_node n = *remap->node;
+            write(fp, &n, sizeof(struct b8e_map_node));
+        }
+        if (fp != 0x0) {
+            close(fp);
+        }
+    }
     
     return 0;
 }

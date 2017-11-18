@@ -11,8 +11,35 @@
 #include <getopt.h>
 #include <stdint.h>
 #include "vconi.h"
+#include "udb.h"
+#include "charmap.h"
 
 extern int ucdn_get_general_category(uint32_t code);
+LANGUAGE lang = 'a';
+b8e_config *config;
+b8e_map *map;
+
+LANGUAGE get_language2(int langx) {
+    switch (langx) {
+        case 2432:
+            return L_BENGALI;
+            break;
+        case 2304:
+            return L_DEVANAGARI;
+            break;
+        case 3456:
+            return L_SINHALA;
+            break;
+        case 3584:
+            return L_THAI;
+            break;
+        default:
+            map_print();
+            exit(-1);
+            break;
+    }
+    return -1;
+}
 
 int main(int argc, char **argv)
 {
@@ -22,8 +49,15 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
-    const unsigned char *lang = optarg;
-    int number = (int)strtol(lang, NULL, 16);
+    udb_init();
+
+    const unsigned char *langxy = optarg;
+    int number = (int)strtol(langxy, NULL, 16);
+
+    lang = get_language2(number);
+    config = (b8e_config *) malloc(sizeof(b8e_config));
+    map = map_init(config);
+    map = map_load(config, lang, map);
 
     int consonant = 0x0;
     option = getopt(argc, argv, "c:");
@@ -51,12 +85,20 @@ int main(int argc, char **argv)
 
         unsigned char *uchar = (unsigned char *) malloc(sizeof(unsigned char) * 4);
         int32_t point = i;
-        uchar = getuchar(point, uchar);
 
+        const b8e_rec rec = codepoint2local(map, point);
+        if (rec.value == 0xFF) continue;
+
+        uchar = getuchar(point, uchar);
         if ((cl == 10 || cl == 12) && consonant != 0x00) {
             printf("%s%s", basechar, uchar);
         } else {
             printf("%s", uchar);
+        }
+
+        struct ucdb_column *ucdb_col = udb_find(point);
+        if (ucdb_col != 0x0) {
+            printf("\t%s - %s", ucdb_col->data, ucdb_col->next->data);
         }
 
         printf("%c", 0xa);
