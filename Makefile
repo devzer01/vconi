@@ -32,8 +32,8 @@ headers: util/conf/map2.csv
 clean:
 	find ./ -name \*.o -exec rm {} \;
 	rm bin/* 2> /dev/null; true
-	cd data/report && rm *.txt 2> /dev/null; true
-	cd data/output && rm *.txt 2> /dev/null; true
+	find ./data/report -type f -exec rm {} \;
+	find ./data/output -type f -exec rm {} \;
 
 char: all
 	./bin/convert -l 0x06 -d f -f test.txt -t pali.b8e
