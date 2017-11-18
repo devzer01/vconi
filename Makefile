@@ -4,6 +4,7 @@ all: base udb lib map src/convert src/compare generate
 
 udb: src/udb/main.c
 	gcc -O0 -g3 -o src/udb/udb src/udb/main.c
+	#gcc -DDEBUG -O0 -g3 -fsanitize=address -fno-omit-frame-pointer -o src/udb/udb src/udb/main.c -lasan
 
 base: src/vconi.c
 	gcc -c -g3 -O0 -o src/vconi.o src/vconi.c -Isrc/map/
