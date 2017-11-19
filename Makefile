@@ -7,6 +7,10 @@ udb: src/udb/main.c src/udb/udb.c src/udb/udb.h base
 	gcc -O0 -g3 -o src/udb/udb src/udb/main.c src/udb/udb.o src/vconi.o -Isrc/ -Isrc/map/
 	#gcc -DDEBUG -O0 -g3 -fsanitize=address -fno-omit-frame-pointer -o src/udb/udb src/udb/main.c -lasan
 
+bitmap: src/bitmap/bitmap.c src/bitmap/bitmap.h src/bitmap/main.c
+	gcc -c -O0 -g3 -o src/bitmap/bitmap.o src/bitmap/bitmap.c
+	gcc -o bin/bitmap -O0 -g3 src/bitmap/main.c src/bitmap/bitmap.o
+
 base: src/vconi.c
 	gcc -c -g3 -O0 -o src/vconi.o src/vconi.c -Isrc/map/
 
