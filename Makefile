@@ -8,8 +8,11 @@ udb: src/udb/main.c src/udb/udb.c src/udb/udb.h base
 	#gcc -DDEBUG -O0 -g3 -fsanitize=address -fno-omit-frame-pointer -o src/udb/udb src/udb/main.c -lasan
 
 bitmap: src/bitmap/bitmap.c src/bitmap/bitmap.h src/bitmap/main.c
+	nasm -f elf64 -g -o src/bitmap/bitcount.o src/bitmap/bitcount.asm
 	gcc -c -O0 -g3 -o src/bitmap/bitmap.o src/bitmap/bitmap.c
-	gcc -o bin/bitmap -O0 -g3 src/bitmap/main.c src/bitmap/bitmap.o
+	gcc -c -O0 -g3 -o src/bitmap/main.o src/bitmap/main.c
+	gcc -O0 -g3 -o bin/bitmap src/bitmap/bitcount.o src/bitmap/bitmap.o src/bitmap/main.o
+	# gcc -o bin/bitmap -O0 -g3 src/bitmap/main.c src/bitmap/bitmap.o
 
 word: data/input/test.txt
 	cd data && make word
