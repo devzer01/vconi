@@ -5,9 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include "bitmap.h"
 
-struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader, bmp_px_matrix **base_node)
+void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
 {
     FILE *filePtr; //our file pointer
     BITMAPFILEHEADER bitmapFileHeader; //our bitmap file header
@@ -71,7 +72,8 @@ struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInf
     struct bmp_px_row *ptrRoot = root;
     unsigned long int row = 0;
     while(row < (bitmapInfoHeader->biHeight)) {
-        root->row = row;
+        root->row = row + 1;
+        root->n_row_px = 0;
         root->bitmap_row = malloc(sizeof(unsigned char) * widthInBytes);
         memcpy(root->bitmap_row, revptr, widthInBytes);
         revptr = ((bitmapImage + bitmapInfoHeader->biSizeImage) - (widthInBytes * ++row));
@@ -83,120 +85,42 @@ struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInf
 
    //now do stats
     root = ptrRoot;
+    printf("image dimensions %d x %d\n", bitmapInfoHeader->biHeight, bitmapInfoHeader->biWidth);
     while(root->row < (bitmapInfoHeader->biHeight)) {
-        unsigned char *ptrRowData = root->bitmap_row;
+        u_int16_t v_count = 0;
+        u_int64_t *pixGroup = (u_int64_t *) root->bitmap_row;
+        //u_int64_t *ptr64 = (u_int64_t *) root->bitmap_row;
+        //while (ptr64 != 0x0) printf("%" PRIu64 " ", (unsigned long) ptr64++);
         unsigned int column = 0;
+        //uint64_t *pixGroup = (uint64_t *) ptrRowData;
+
         while(column < bitmapInfoHeader->biWidth) {
-            unsigned int *pixGroup = (unsigned int *) ptrRowData;
-            unsigned int *bitCount;
-            __asm {
-                mov ax, [pixGroup]
-                popcnt bx, ax
-                mov [bitCount], bx
-            }
-            column += 32;
-            root->n_row_px = *bitCount;
-        }
-    }
-
-
-    /*if (*ptrRowData == 0x0) {
-                column += 8;
-                ptrRowData++;
+            column += 64;
+            if (*pixGroup == 0) {
+                pixGroup++;
                 continue;
             }
-            unsigned char mask = 0b10000000;
-            short bit = 0;
-            while(bit < 8) {
-                if (mask == (*ptrRowData & mask)) {
-                    root->px++;
+            //*pixGroup = 0b1111111111000000011111100000000111;
+            //printf("input - %ld ", *pixGroup);
+            u_int64_t retval = bitcount(*pixGroup);
+            root->n_row_px += retval;
+            if (root->n_row_px > bitmapInfoHeader->biWidth) {
+                int i = 8;
+                printf("%llu =## ", retval);
+                u_int64_t temp = *pixGroup;
+                while (i > 0) {
+                    printf(" %#0x ", (unsigned  char) (temp & 0xff));
+                    temp = temp >> 8;
+                    i--;
                 }
-                mask = mask >> 1;
-                bit++;
-                column++;
-            }*/
-
-  /*  struct bmp_px_matrix *matrix = *base_node;
-    struct bmp_px_matrix *origin = matrix;
-    //struct bmp_col_stat *lcol_stat = base_col;
-    struct bmp_row_stat *lrow_stat = base_row;
-    lrow_stat->npix = 0;
-    for (unsigned long int c = 0; c < colSize; c++) {
-        lrow_stat->row = c;
-        struct bmp_col_stat *lcol_stat = malloc(sizeof(struct bmp_col_stat));
-        lrow_stat->base_col_stat = lcol_stat;
-#if DEBUG
-        printf("row %d ", c);
-#endif
-        for (unsigned long int i = 0; i < widthInBytes; i++) {
-            unsigned char mask = 0b10000000;
-            for (int b = 0; b < 8; b++) {
-                if (((i * 8) + b) >= bitmapInfoHeader->biWidth) continue;
-                struct bmp_px *px = malloc(sizeof(struct bmp_px));
-                px->row = c;
-                px->col = (i * 8) + b;
-                px->px = 0;
-                lcol_stat->col = px->col;
-                lcol_stat->row = c;
-                if (mask == (*rowData & mask)) {
-                    px->px = 1;
-                    lcol_stat->npix = 1;
-                    lrow_stat->npix++;
-                    //printf("%d %d %d\n", lcol_stat->col, lcol_stat->npix, lcol_stat->left->col);
-                }
-
-                if (matrix->right != 0x0) {
-                    matrix->bottom = malloc(sizeof(struct bmp_px_matrix));
-                    matrix->bottom->left = 0x0;
-                    matrix->bottom->right = 0x0;
-                    matrix->bottom->bottom = 0x0;
-                    matrix->bottom->top = matrix;
-                    matrix->bottom->px = px;
-
-                } else if (matrix->right == 0x0) {
-                    matrix->px = px;
-                    matrix->right = malloc(sizeof(struct bmp_px_matrix));
-                    matrix->right->left = matrix;
-                    matrix->right->bottom = 0x0;
-                    matrix->right->right = 0x0;
-                }
-
-                if (matrix->left != 0x0 && matrix->bottom != 0x0) {
-                    matrix->bottom->left = matrix->left->bottom;
-                    matrix->left->bottom->right = matrix->bottom;
-                }
-                struct bmp_col_stat *l_right = malloc(sizeof(struct bmp_col_stat));
-                l_right->left = lcol_stat;
-                lcol_stat->right = l_right;
-                l_right->npix = 0;
-                (lcol_stat) = l_right;
-#if DEBUG
-                printf("c %ld ", matrix->px->col);
-#endif
-                (matrix) = matrix->right;
-                mask = mask >> 1;
+                printf(" - row %d - iteration %d input %llu \n", root->n_row_px, column, *pixGroup);
             }
-            rowData++;
+            //printf("return %d\n ", count);
+             // += count;
+                    //root->n_row_px += bitCount;
+            pixGroup++;
         }
-        if ((c + 1) != colSize) {
-            revptr = ((bitmapImage + bitmapInfoHeader->biSizeImage) - widthInBytes * (c + 2));
-            free(ptrRowData);
-            rowData = malloc(sizeof(unsigned char) * widthInBytes);
-            ptrRowData = rowData;
-            memcpy(rowData, revptr, widthInBytes);
-
-            if (c > 0 && (c % 2) == 1) {
-                (origin) = origin->bottom;
-            }
-
-            (matrix) = origin;
-        }
-        //(lcol_stat) = base_col;
-        lrow_stat->bottom = malloc(sizeof(struct bmp_row_stat));
-        lrow_stat->bottom->top = lrow_stat;
-        (lrow_stat) = lrow_stat->bottom;
-        lrow_stat->npix = 0;
-    }*/
-
-    return base;
+        printf("row %ld has %d / %d pixels on \n", root->row, root->n_row_px, column);
+        (root) = root->bottom;
+    }
 }

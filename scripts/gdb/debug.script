@@ -1,10 +1,9 @@
 set breakpoint pending on
 file bin/bitmap
-break bitmap.c:94 if (c == 1)
+break bitmap.c:95
 # break bitmap.c:124 if (c > 2)
 commands 1
-p lcol_stat
-p lcol_stat->npix
+info registers
 end
 run
 #display /t mask

@@ -1,6 +1,10 @@
 //
 // Created by nayana on 19/11/2560.
 //
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 
 #ifndef CODE_BITMAP_H
 #define CODE_BITMAP_H
@@ -38,7 +42,7 @@ typedef struct tagBITMAPINFOHEADER
 typedef struct bmp_px_row {
     unsigned char *bitmap_row;
     unsigned long int row;
-    unsigned int n_row_px;
+    unsigned short n_row_px;
     struct bmp_px_row *top;
     struct bmp_px_row *left;
     struct bmp_px_row *right;
@@ -51,7 +55,7 @@ typedef struct bmp_px_gap {
     struct bmp_px_gap *prev;
     struct bmp_px_gap *next;
     struct bmp_px_row *row;
-};
+} bmp_px_gap;
 
 
 
@@ -59,11 +63,11 @@ typedef struct bmp_px_gap {
 
 };*/
 
-struct bmp_px_matrix *base;
+//struct bmp_px_matrix *base;
 //struct bmp_col_stat *base_col;
-struct bmp_row_stat *base_row;
+//struct bmp_row_stat *base_row;
 
-struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader, bmp_px_matrix **base_node);
-int drawchar(int row_start, int row_end, int col_start, int col_end, struct bmp_px_matrix **xbase);
-
+void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader); //, bmp_px_matrix **base_node);
+//int drawchar(int row_start, int row_end, int col_start, int col_end, struct bmp_px_matrix **xbase);
+extern unsigned short bitcount(uint64_t group);
 #endif //CODE_BITMAP_H
