@@ -35,44 +35,25 @@ typedef struct tagBITMAPINFOHEADER
 }BITMAPINFOHEADER;
 
 
-typedef struct bmp_px {
-    unsigned char px;
-    unsigned long int col;
+typedef struct bmp_px_row {
+    unsigned char *bitmap_row;
     unsigned long int row;
-} bmp_px ;
+    unsigned int n_row_px;
+    struct bmp_px_row *top;
+    struct bmp_px_row *left;
+    struct bmp_px_row *right;
+    struct bmp_px_row *bottom;
+} bmp_px_row ;
 
-typedef struct bmp_col_stat {
-    unsigned int col;
-    unsigned int npix;
-    struct bmp_col_stat *left;
-    struct bmp_col_stat *right;
-} bmp_col_stat;
+typedef struct bmp_px_gap {
+    unsigned int start;
+    unsigned int end;
+    struct bmp_px_gap *prev;
+    struct bmp_px_gap *next;
+    struct bmp_px_row *row;
+};
 
-typedef struct bmp_row_stat {
-    unsigned int row;
-    unsigned int npix;
-    struct bmp_row_stat *top;
-    struct bmp_row_stat *bottom;
-    struct bmp_col_stat *base_col_stat;
-} bmp_row_stat;
 
-typedef struct bmp_px_matrix {
-    struct bmp_px *px;
-    struct bmp_px_matrix *top;
-    struct bmp_px_matrix *left;
-    struct bmp_px_matrix *right;
-    struct bmp_px_matrix *bottom;
-} bmp_px_matrix;
-
-typedef struct ocr_gap {
-    int col_gap_start;
-    int col_gap_end;
-    int row_gap_start;
-    int row_gap_end;
-    struct ocr_gap *next;
-    struct ocr_gap *prev;
-    struct ocr_gap *col;
-} ocr_gap;
 
 /*typedef struct ocr_char_cell {
 

@@ -63,31 +63,72 @@ struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInf
     //so now we have the image data in backwards lets set it properly
     //since we gonna spend time traversing it once lets try to make good use of it
 
-    unsigned int row, col, index = bitmapInfoHeader->biSizeImage;
     unsigned int iPerRow = ((bitmapInfoHeader->biBitCount * bitmapInfoHeader->biWidth) / (8 * 4));
     if (((bitmapInfoHeader->biBitCount * bitmapInfoHeader->biWidth) / (8 * 4)) > 0) iPerRow++;
-    unsigned int rowSize =  iPerRow * 4;
-    unsigned char *revptr = (unsigned char *) ((bitmapImage+bitmapInfoHeader->biSizeImage) - rowSize);
-    unsigned char *rowData = malloc(sizeof(unsigned char) * rowSize);
-    unsigned char *ptrRowData = rowData;
-    signed int colSize = bitmapInfoHeader->biHeight;
+    unsigned int widthInBytes =  iPerRow * 4;
+    unsigned char *revptr = (unsigned char *) ((bitmapImage+bitmapInfoHeader->biSizeImage) - widthInBytes);
+    struct bmp_px_row *root = malloc(sizeof(struct bmp_px_row));
+    struct bmp_px_row *ptrRoot = root;
+    unsigned long int row = 0;
+    while(row < (bitmapInfoHeader->biHeight)) {
+        root->row = row;
+        root->bitmap_row = malloc(sizeof(unsigned char) * widthInBytes);
+        memcpy(root->bitmap_row, revptr, widthInBytes);
+        revptr = ((bitmapImage + bitmapInfoHeader->biSizeImage) - (widthInBytes * ++row));
+        struct bmp_px_row *temp_row = malloc(sizeof(struct bmp_px_row));
+        temp_row->top = root;
+        root->bottom = temp_row;
+        (root) = temp_row;
+    }
 
-    memcpy(rowData, revptr, rowSize);
-    row = 0;
-    struct bmp_px_matrix *matrix = *base_node;
+   //now do stats
+    root = ptrRoot;
+    while(root->row < (bitmapInfoHeader->biHeight)) {
+        unsigned char *ptrRowData = root->bitmap_row;
+        unsigned int column = 0;
+        while(column < bitmapInfoHeader->biWidth) {
+            unsigned int *pixGroup = (unsigned int *) ptrRowData;
+            unsigned int *bitCount;
+            __asm {
+                mov ax, [pixGroup]
+                popcnt bx, ax
+                mov [bitCount], bx
+            }
+            column += 32;
+            root->n_row_px = *bitCount;
+        }
+    }
+
+
+    /*if (*ptrRowData == 0x0) {
+                column += 8;
+                ptrRowData++;
+                continue;
+            }
+            unsigned char mask = 0b10000000;
+            short bit = 0;
+            while(bit < 8) {
+                if (mask == (*ptrRowData & mask)) {
+                    root->px++;
+                }
+                mask = mask >> 1;
+                bit++;
+                column++;
+            }*/
+
+  /*  struct bmp_px_matrix *matrix = *base_node;
     struct bmp_px_matrix *origin = matrix;
     //struct bmp_col_stat *lcol_stat = base_col;
     struct bmp_row_stat *lrow_stat = base_row;
-    struct bmp_col_stat *lcol_stat;
     lrow_stat->npix = 0;
-    for (int c = 0; c < colSize; c++) {
+    for (unsigned long int c = 0; c < colSize; c++) {
         lrow_stat->row = c;
-        lrow_stat->base_col_stat = malloc(sizeof(struct bmp_col_stat));
-        lcol_stat = lrow_stat->base_col_stat;
+        struct bmp_col_stat *lcol_stat = malloc(sizeof(struct bmp_col_stat));
+        lrow_stat->base_col_stat = lcol_stat;
 #if DEBUG
         printf("row %d ", c);
 #endif
-        for (int i = 0; i < rowSize; i++) {
+        for (unsigned long int i = 0; i < widthInBytes; i++) {
             unsigned char mask = 0b10000000;
             for (int b = 0; b < 8; b++) {
                 if (((i * 8) + b) >= bitmapInfoHeader->biWidth) continue;
@@ -96,10 +137,12 @@ struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInf
                 px->col = (i * 8) + b;
                 px->px = 0;
                 lcol_stat->col = px->col;
+                lcol_stat->row = c;
                 if (mask == (*rowData & mask)) {
                     px->px = 1;
-                    lcol_stat->npix++;
+                    lcol_stat->npix = 1;
                     lrow_stat->npix++;
+                    //printf("%d %d %d\n", lcol_stat->col, lcol_stat->npix, lcol_stat->left->col);
                 }
 
                 if (matrix->right != 0x0) {
@@ -122,13 +165,11 @@ struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInf
                     matrix->bottom->left = matrix->left->bottom;
                     matrix->left->bottom->right = matrix->bottom;
                 }
-
-                lcol_stat->right = malloc(sizeof(struct bmp_col_stat));
-                lcol_stat->right->left = lcol_stat;
-                lcol_stat->right->npix = 0;
-
-
-                (lcol_stat) = lcol_stat->right;
+                struct bmp_col_stat *l_right = malloc(sizeof(struct bmp_col_stat));
+                l_right->left = lcol_stat;
+                lcol_stat->right = l_right;
+                l_right->npix = 0;
+                (lcol_stat) = l_right;
 #if DEBUG
                 printf("c %ld ", matrix->px->col);
 #endif
@@ -138,11 +179,11 @@ struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInf
             rowData++;
         }
         if ((c + 1) != colSize) {
-            revptr = ((bitmapImage + bitmapInfoHeader->biSizeImage) - rowSize * (c + 2));
+            revptr = ((bitmapImage + bitmapInfoHeader->biSizeImage) - widthInBytes * (c + 2));
             free(ptrRowData);
-            rowData = malloc(sizeof(unsigned char) * rowSize);
+            rowData = malloc(sizeof(unsigned char) * widthInBytes);
             ptrRowData = rowData;
-            memcpy(rowData, revptr, rowSize);
+            memcpy(rowData, revptr, widthInBytes);
 
             if (c > 0 && (c % 2) == 1) {
                 (origin) = origin->bottom;
@@ -155,7 +196,7 @@ struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInf
         lrow_stat->bottom->top = lrow_stat;
         (lrow_stat) = lrow_stat->bottom;
         lrow_stat->npix = 0;
-    }
+    }*/
 
     return base;
 }
