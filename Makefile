@@ -11,6 +11,21 @@ bitmap: src/bitmap/bitmap.c src/bitmap/bitmap.h src/bitmap/main.c
 	gcc -c -O0 -g3 -o src/bitmap/bitmap.o src/bitmap/bitmap.c
 	gcc -o bin/bitmap -O0 -g3 src/bitmap/main.c src/bitmap/bitmap.o
 
+word: data/input/test.txt
+	cd data && make word
+	./src/udb/udb < data/input/test.txt > data/test/p1.txt
+	./src/udb/udb < data/input/test_benga.txt > data/test/p2.txt
+	./src/udb/udb < data/input/test_devan.txt > data/test/p3.txt
+	cat data/input/test_burm.txt | ./src/udb/udb > data/test/p4.txt
+	column -e -c data/test/p1.txt data/test/p2.txt data/test/p3.txt data/test/p4.txt
+
+rbitmap: bitmap
+	./bin/bitmap
+
+bdebug: bitmap
+	cp scripts/gdb/debug.script ~/.gdbinit
+	gdb
+
 base: src/vconi.c
 	gcc -c -g3 -O0 -o src/vconi.o src/vconi.c -Isrc/map/
 
@@ -52,7 +67,8 @@ debug: all
 	diff -w dv.txt.re data/output/Bengali-0x03-alpha.txt
 	#cp scripts/gdb/debug.script ~/.gdbinit
 	#gdb
-
+utf8: src/utf8/main.c base
+	gcc -O0 -g3 -o src/utf8/utf8 src/utf8/main.c src/vconi.o -Isrc/ -Isrc/map/
 
 save:
 	git commit -m "saving home work" .

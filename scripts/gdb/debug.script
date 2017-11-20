@@ -1,12 +1,14 @@
 set breakpoint pending on
-file bin/convert
-#break main.c:74
-#break main.c:104
-#break main.c:308
-#break main.c:336
-run -l 0x03 -d f -f data/output/Bengali-0x03-alpha.txt -t dv.txt
-#run -l 0x03 -d b -f dv.txt -t dv.txt.re
-
-
-# run
-#
+file bin/bitmap
+break bitmap.c:94 if (c == 1)
+# break bitmap.c:124 if (c > 2)
+commands 1
+p lcol_stat
+p lcol_stat->npix
+end
+run
+#display /t mask
+#display /t *rowData
+#display base->bottom
+#display px->col
+#display matrix

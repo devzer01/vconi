@@ -16,6 +16,14 @@ int32_t utf82codepoint(unsigned char *buffer) {
     return codepoint;
 }
 
+int32_t vconi_utf82codepoint(unsigned char *buffer, short length) {
+    if (length == 1) {
+        return (int32_t) 0b01111111 & buffer[0];
+    } else {
+        return utf82codepoint(buffer);
+    }
+}
+
 short vconi_char_length(unsigned char val) {
     if (val < 128) {
         return 1;
@@ -65,21 +73,15 @@ range *getcodeparams(int32_t number, range *ptr)
 unsigned char *getuchar(int32_t codepoint, unsigned char *buf)
 {
     range *ptr = (range *) malloc(sizeof(range));
-    int32_t chr = 0;
-    int32_t needle = 0xff;
-    int shft = 1;
     ptr = getcodeparams(codepoint, ptr);
+    buf = malloc(sizeof(unsigned char) * ptr->bsize);
     int loop = ptr->bsize;
-    while (loop-- >= 0) {
-        chr += codepoint & (ptr->ch & needle);
-        codepoint = (codepoint | (ptr->ch & needle)) << 2;
-        needle = needle << 8 * shft++;
-    }
-    chr += ptr->mask;
-    unsigned char *cptr = (unsigned  char *) &chr;
-    loop = ptr->bsize;
-    while (loop-- >= 0) {
-        memcpy(buf+loop, cptr++, 1);
+    while (0 <= --loop) {
+        unsigned char ch = (ptr->mask & 0xff) + (codepoint & (ptr->ch & 0xff));
+        memcpy((buf+loop), &ch, 1);
+        codepoint = codepoint >> 6;
+        ptr->mask = ptr->mask >> 8;
+        ptr->ch = ptr->ch >> 8;
     }
     return buf;
 }

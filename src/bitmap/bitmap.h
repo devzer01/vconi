@@ -11,11 +11,10 @@ typedef unsigned long LONG;
 
 typedef struct tagBITMAPFILEHEADER
 {
-    WORD bfType;  //specifies the file type
-    DWORD bfSize;  //specifies the size in bytes of the bitmap file
-    WORD bfReserved1;  //reserved; must be 0
-    WORD bfReserved2;  //reserved; must be 0
-    DWORD bOffBits;  //species the offset in bytes from the bitmapfileheader to the bitmap bits
+    //unsigned short bfType;  //specifies the file type
+    unsigned int bfSize;  //specifies the size in bytes of the bitmap file
+    unsigned int bfReserved1;  //reserved; must be 0
+    unsigned int bOffBits;  //species the offset in bytes from the bitmapfileheader to the bitmap bits
 }BITMAPFILEHEADER;
 
 typedef struct tagBITMAPINFOHEADER
@@ -31,11 +30,57 @@ typedef struct tagBITMAPINFOHEADER
     int biYPelsPerMeter;  //number of pixels per meter in y axis
     unsigned int biClrUsed;  //number of colors used by th ebitmap
     unsigned int biClrImportant;  //number of colors that are important
-    unsigned char rest[68];
+    unsigned char prof[4];
+    unsigned char rest[64];
 }BITMAPINFOHEADER;
 
 
-unsigned char *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader);
+typedef struct bmp_px {
+    unsigned char px;
+    unsigned long int col;
+    unsigned long int row;
+} bmp_px ;
 
+typedef struct bmp_col_stat {
+    unsigned int col;
+    unsigned int npix;
+    struct bmp_col_stat *left;
+    struct bmp_col_stat *right;
+} bmp_col_stat;
+
+typedef struct bmp_row_stat {
+    unsigned int row;
+    unsigned int npix;
+    struct bmp_row_stat *top;
+    struct bmp_row_stat *bottom;
+} bmp_row_stat;
+
+typedef struct bmp_px_matrix {
+    struct bmp_px *px;
+    struct bmp_px_matrix *top;
+    struct bmp_px_matrix *left;
+    struct bmp_px_matrix *right;
+    struct bmp_px_matrix *bottom;
+} bmp_px_matrix;
+
+typedef struct ocr_gap {
+    int col_gap_start;
+    int col_gap_end;
+    int row_gap_start;
+    int row_gap_end;
+    struct ocr_gap *next;
+    struct ocr_gap *prev;
+} ocr_gap;
+
+/*typedef struct ocr_char_cell {
+
+};*/
+
+struct bmp_px_matrix *base;
+struct bmp_col_stat *base_col;
+struct bmp_row_stat *base_row;
+
+struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader, bmp_px_matrix **base_node);
+int drawchar(int row_start, int row_end, int col_start, int col_end, struct bmp_px_matrix **xbase);
 
 #endif //CODE_BITMAP_H

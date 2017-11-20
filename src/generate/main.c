@@ -33,6 +33,9 @@ LANGUAGE get_language2(int langx) {
         case 3584:
             return L_THAI;
             break;
+        case 4096:
+            return L_BURMESE;
+            break;
         default:
             map_print();
             exit(-1);
