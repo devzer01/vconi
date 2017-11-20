@@ -53,6 +53,7 @@ typedef struct bmp_row_stat {
     unsigned int npix;
     struct bmp_row_stat *top;
     struct bmp_row_stat *bottom;
+    struct bmp_col_stat *base_col_stat;
 } bmp_row_stat;
 
 typedef struct bmp_px_matrix {
@@ -70,6 +71,7 @@ typedef struct ocr_gap {
     int row_gap_end;
     struct ocr_gap *next;
     struct ocr_gap *prev;
+    struct ocr_gap *col;
 } ocr_gap;
 
 /*typedef struct ocr_char_cell {
@@ -77,7 +79,7 @@ typedef struct ocr_gap {
 };*/
 
 struct bmp_px_matrix *base;
-struct bmp_col_stat *base_col;
+//struct bmp_col_stat *base_col;
 struct bmp_row_stat *base_row;
 
 struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader, bmp_px_matrix **base_node);

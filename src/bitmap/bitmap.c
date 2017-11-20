@@ -76,11 +76,14 @@ struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInf
     row = 0;
     struct bmp_px_matrix *matrix = *base_node;
     struct bmp_px_matrix *origin = matrix;
-    struct bmp_col_stat *lcol_stat = base_col;
+    //struct bmp_col_stat *lcol_stat = base_col;
     struct bmp_row_stat *lrow_stat = base_row;
+    struct bmp_col_stat *lcol_stat;
     lrow_stat->npix = 0;
     for (int c = 0; c < colSize; c++) {
         lrow_stat->row = c;
+        lrow_stat->base_col_stat = malloc(sizeof(struct bmp_col_stat));
+        lcol_stat = lrow_stat->base_col_stat;
 #if DEBUG
         printf("row %d ", c);
 #endif
@@ -120,11 +123,10 @@ struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInf
                     matrix->left->bottom->right = matrix->bottom;
                 }
 
-                if (c == 0) {
-                    lcol_stat->right = malloc(sizeof(struct bmp_col_stat));
-                    lcol_stat->right->left = lcol_stat;
-                    lcol_stat->right->npix = 0;
-                }
+                lcol_stat->right = malloc(sizeof(struct bmp_col_stat));
+                lcol_stat->right->left = lcol_stat;
+                lcol_stat->right->npix = 0;
+
 
                 (lcol_stat) = lcol_stat->right;
 #if DEBUG
@@ -148,7 +150,7 @@ struct bmp_px_matrix *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInf
 
             (matrix) = origin;
         }
-        (lcol_stat) = base_col;
+        //(lcol_stat) = base_col;
         lrow_stat->bottom = malloc(sizeof(struct bmp_row_stat));
         lrow_stat->bottom->top = lrow_stat;
         (lrow_stat) = lrow_stat->bottom;
