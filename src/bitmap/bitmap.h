@@ -49,14 +49,22 @@ typedef struct bmp_px_row {
     struct bmp_px_row *bottom;
 } bmp_px_row ;
 
-typedef struct bmp_px_gap {
+typedef struct ocr_row {
     unsigned int start;
     unsigned int end;
-    struct bmp_px_gap *prev;
-    struct bmp_px_gap *next;
+    struct ocr_row *prev;
+    struct ocr_row *next;
     struct bmp_px_row *row;
-} bmp_px_gap;
+    struct ocr_cell *first_cell;
+} ocr_row;
 
+typedef struct ocr_cell {
+    unsigned int start;
+    unsigned int end;
+    struct ocr_cell *prev;
+    struct ocr_cell *next;
+    struct ocr_row *or_row;
+} ocr_cell;
 
 
 /*typedef struct ocr_char_cell {
@@ -71,3 +79,4 @@ void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader); //, bm
 //int drawchar(int row_start, int row_end, int col_start, int col_end, struct bmp_px_matrix **xbase);
 extern unsigned short bitcount(uint64_t group);
 #endif //CODE_BITMAP_H
+

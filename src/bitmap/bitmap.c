@@ -68,16 +68,21 @@ void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
     if (((bitmapInfoHeader->biBitCount * bitmapInfoHeader->biWidth) / (8 * 4)) > 0) iPerRow++;
     unsigned int widthInBytes =  iPerRow * 4;
     unsigned char *revptr = (unsigned char *) ((bitmapImage+bitmapInfoHeader->biSizeImage) - widthInBytes);
+
     struct bmp_px_row *root = malloc(sizeof(struct bmp_px_row));
     struct bmp_px_row *ptrRoot = root;
+    root->row = 1;
+    root->n_row_px = 0;
+    root->top = 0x0;
     unsigned long int row = 0;
+
     while(row < (bitmapInfoHeader->biHeight)) {
-        root->row = row + 1;
-        root->n_row_px = 0;
         root->bitmap_row = malloc(sizeof(unsigned char) * widthInBytes);
         memcpy(root->bitmap_row, revptr, widthInBytes);
         revptr = ((bitmapImage + bitmapInfoHeader->biSizeImage) - (widthInBytes * ++row));
         struct bmp_px_row *temp_row = malloc(sizeof(struct bmp_px_row));
+        temp_row->row = root->row + 1;
+        temp_row->n_row_px = 0;
         temp_row->top = root;
         root->bottom = temp_row;
         (root) = temp_row;
@@ -85,42 +90,104 @@ void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
 
    //now do stats
     root = ptrRoot;
+    struct ocr_row *ocr_row_root = malloc(sizeof(struct ocr_row));
+    struct ocr_row *or_root = ocr_row_root;
+    or_root->start = 0;
+    unsigned int column = 0;
     printf("image dimensions %d x %d\n", bitmapInfoHeader->biHeight, bitmapInfoHeader->biWidth);
     while(root->row < (bitmapInfoHeader->biHeight)) {
-        u_int16_t v_count = 0;
         u_int64_t *pixGroup = (u_int64_t *) root->bitmap_row;
-        //u_int64_t *ptr64 = (u_int64_t *) root->bitmap_row;
-        //while (ptr64 != 0x0) printf("%" PRIu64 " ", (unsigned long) ptr64++);
-        unsigned int column = 0;
-        //uint64_t *pixGroup = (uint64_t *) ptrRowData;
-
         while(column < bitmapInfoHeader->biWidth) {
             column += 64;
             if (*pixGroup == 0) {
-                pixGroup++;
-                continue;
+            } else {
+                root->n_row_px += bitcount(*pixGroup);
             }
-            //*pixGroup = 0b1111111111000000011111100000000111;
-            //printf("input - %ld ", *pixGroup);
-            u_int64_t retval = bitcount(*pixGroup);
-            root->n_row_px += retval;
-            if (root->n_row_px > bitmapInfoHeader->biWidth) {
-                int i = 8;
-                printf("%llu =## ", retval);
-                u_int64_t temp = *pixGroup;
-                while (i > 0) {
-                    printf(" %#0x ", (unsigned  char) (temp & 0xff));
-                    temp = temp >> 8;
-                    i--;
-                }
-                printf(" - row %d - iteration %d input %llu \n", root->n_row_px, column, *pixGroup);
-            }
-            //printf("return %d\n ", count);
-             // += count;
-                    //root->n_row_px += bitCount;
             pixGroup++;
         }
-        printf("row %ld has %d / %d pixels on \n", root->row, root->n_row_px, column);
+        if (root->row > 1 && root->row < bitmapInfoHeader->biHeight) {
+            if(root->top->n_row_px == 0 && root->n_row_px != 0) {
+                or_root->start = root->row;
+                or_root->row = root;
+            } else if (root->top->n_row_px != 0 && root->n_row_px == 0 && or_root->start != 0) {
+                or_root->end = root->row;
+                or_root->next = malloc(sizeof(struct ocr_row));
+                or_root->next->prev = or_root;
+                (or_root) = or_root->next;
+                or_root->next = 0;
+            }
+        }
         (root) = root->bottom;
+        column = 0;
+    }
+    //printf("row %ld has %d / %d pixels on \n", root->row, root->n_row_px, column);
+    or_root = ocr_row_root;
+    struct ocr_cell *or_cell = malloc(sizeof(struct ocr_cell));
+    or_root->first_cell = or_cell;
+    int last_col_px_count = 0;
+    int col_px_count = 0;
+    //now we go look for char cell breaks
+    while (or_root != 0) {
+        unsigned int byteIndex = 0;
+        unsigned char mask = 0b10000000;
+        column = 1;
+        last_col_px_count = 0;
+        col_px_count = 0;
+        while (column <= bitmapInfoHeader->biWidth) {
+            while (mask > 0) {
+                struct bmp_px_row *bmp_row = or_root->row;
+                int height = or_root->end - or_root->start;
+                while (height >= 0) {
+                    if ((bmp_row->bitmap_row[byteIndex] & mask) == mask) {
+                        col_px_count++;
+                    }
+                    (bmp_row) = bmp_row->bottom;
+                    height--;
+                }
+                if (column > 1) {
+                    if (col_px_count != 0 && last_col_px_count == 0) {
+                        or_cell->start = column;
+                        or_cell->or_row = or_root;
+                    } else if (last_col_px_count != 0 && col_px_count == 0) {
+                        or_cell->end = column;
+                        or_cell->next = malloc(sizeof(struct ocr_cell));
+                        or_cell->next->prev = or_cell;
+                        (or_cell) = or_cell->next;
+                        or_cell->next = 0;
+                    }
+                }
+                last_col_px_count = col_px_count;
+                col_px_count = 0;
+                column++;
+                mask = mask > 1;
+            }
+            byteIndex++;
+            mask = 0b10000000;
+        }
+        if (or_root->next != 0) {
+            (or_root) = or_root->next;
+        } else {
+            or_root = 0;
+        }
+    }
+
+    or_root = ocr_row_root;
+    printf("cell breakdown \n");
+    while (or_root != 0) {
+        or_cell = or_root->first_cell;
+
+        while (or_cell != 0) {
+            printf(" (%d,%d) - (%d,%d) ", or_cell->or_row->start, or_cell->start, or_cell->or_row->end,
+                   or_cell->end);
+            (or_cell) = or_cell->next;
+        }
+
+        printf("\n");
+
+        if (or_root->next != 0) {
+            (or_root) = or_root->next;
+        } else {
+            or_root = 0;
+        }
     }
 }
