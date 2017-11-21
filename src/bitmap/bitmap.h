@@ -75,6 +75,12 @@ typedef struct ocr_cell {
 //struct bmp_col_stat *base_col;
 //struct bmp_row_stat *base_row;
 
+struct bmp_px_row *root; // = malloc(sizeof(struct bmp_px_row));
+struct bmp_px_row *ptrRoot; // = root;
+
+struct ocr_row *ocr_row_root; // = malloc(sizeof(struct ocr_row));
+struct ocr_row *or_root; // = ocr_row_root;
+
 void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader); //, bmp_px_matrix **base_node);
 //int drawchar(int row_start, int row_end, int col_start, int col_end, struct bmp_px_matrix **xbase);
 extern unsigned short bitcount(uint64_t group);

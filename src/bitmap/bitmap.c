@@ -69,8 +69,8 @@ void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
     unsigned int widthInBytes =  iPerRow * 4;
     unsigned char *revptr = (unsigned char *) ((bitmapImage+bitmapInfoHeader->biSizeImage) - widthInBytes);
 
-    struct bmp_px_row *root = malloc(sizeof(struct bmp_px_row));
-    struct bmp_px_row *ptrRoot = root;
+    root = malloc(sizeof(struct bmp_px_row));
+    ptrRoot = root;
     root->row = 1;
     root->n_row_px = 0;
     root->top = 0x0;
@@ -90,8 +90,8 @@ void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
 
    //now do stats
     root = ptrRoot;
-    struct ocr_row *ocr_row_root = malloc(sizeof(struct ocr_row));
-    struct ocr_row *or_root = ocr_row_root;
+    ocr_row_root = malloc(sizeof(struct ocr_row));
+    or_root = ocr_row_root;
     or_root->start = 0;
     unsigned int column = 0;
     printf("image dimensions %d x %d\n", bitmapInfoHeader->biHeight, bitmapInfoHeader->biWidth);
@@ -174,7 +174,7 @@ void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
     }
 
     or_root = ocr_row_root;
-    printf("cell breakdown \n");
+    /*printf("cell breakdown \n");
     int scanning = 1;
     while (scanning == 1) {
 
@@ -191,5 +191,5 @@ void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
         if (or_root->start < or_root->prev->end) {
             scanning = 0;
         }
-    }
+    }*/
 }
