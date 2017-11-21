@@ -137,7 +137,7 @@ void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
             while (mask > 0) {
                 struct bmp_px_row *bmp_row = or_root->row;
                 int height = or_root->end - or_root->start;
-                while (height >= 0) {
+                while (height > 0) {
                     if ((bmp_row->bitmap_row[byteIndex] & mask) == mask) {
                         col_px_count++;
                     }
@@ -159,13 +159,15 @@ void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
                 last_col_px_count = col_px_count;
                 col_px_count = 0;
                 column++;
-                mask = mask > 1;
+                mask = mask >> 1;
             }
             byteIndex++;
             mask = 0b10000000;
         }
         if (or_root->next != 0) {
             (or_root) = or_root->next;
+            or_cell = malloc(sizeof(struct ocr_cell));
+            or_root->first_cell = or_cell;
         } else {
             or_root = 0;
         }
@@ -173,21 +175,21 @@ void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
 
     or_root = ocr_row_root;
     printf("cell breakdown \n");
-    while (or_root != 0) {
-        or_cell = or_root->first_cell;
+    int scanning = 1;
+    while (scanning == 1) {
 
-        while (or_cell != 0) {
+        (or_cell) = or_root->first_cell;
+
+        while (or_cell != 0x0 && or_cell->next->start > or_cell->end) {
             printf(" (%d,%d) - (%d,%d) ", or_cell->or_row->start, or_cell->start, or_cell->or_row->end,
                    or_cell->end);
             (or_cell) = or_cell->next;
         }
 
         printf("\n");
-
-        if (or_root->next != 0) {
-            (or_root) = or_root->next;
-        } else {
-            or_root = 0;
+        (or_root) = or_root->next;
+        if (or_root->start < or_root->prev->end) {
+            scanning = 0;
         }
     }
 }
