@@ -149,7 +149,7 @@ void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
                         or_cell->start = column;
                         or_cell->or_row = or_root;
                     } else if (last_col_px_count != 0 && col_px_count == 0) {
-                        or_cell->end = column;
+                        or_cell->end = column - 1;
                         or_cell->next = malloc(sizeof(struct ocr_cell));
                         or_cell->next->prev = or_cell;
                         (or_cell) = or_cell->next;
