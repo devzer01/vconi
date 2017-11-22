@@ -6,20 +6,33 @@
 #include <stdlib.h>
 #include "bitmap.h"
 
-unsigned int gayanna[13] = {
-        0xf38 ,
-        0x3f86,
-        0x3fc2,
-        0x3841,
-        0x7021,
-        0x70e1,
-        0x6081,
-        0x6081,
-        0x6187,
-        0x31ff,
-        0x10fe,
-        0xf7c,
-        0x200
+unsigned int gayanna[25] = {
+         0x0
+        ,0x0
+        ,0x0
+        ,0x0
+        ,0x0
+        ,0x0
+        ,0x0f38
+        ,0x3f86
+        ,0x3fc2
+        ,0x3841
+        ,0x7021
+        ,0x70e1
+        ,0x6081
+        ,0x6081
+        ,0x6187
+        ,0x31ff
+        ,0x10fe
+        ,0x0f7c
+        ,0x0200
+        ,0x0
+        ,0x0
+        ,0x0
+        ,0x0
+        ,0x0
+        ,0x0
+
 };
 
 int drawchar(int s_row, int s_col, int e_row, int e_col, struct bmp_px_row *bmp_row)
@@ -67,10 +80,8 @@ int drawchar(int s_row, int s_col, int e_row, int e_col, struct bmp_px_row *bmp_
         int x = bitcount(xor);
         int anad = colhash & gayanna[cursor];
         int xand = bitcount(anad);
-        if (colhash != 0 && (colhash == (colhash & gayanna[cursor]) || ((colhash >> 2) ==  ((colhash >> 2) & gayanna[cursor])) || ((colhash << 2) == ((colhash << 2) & gayanna[cursor])))) {
-            prob += 1.0 / 13.0;
-            cursor++;
-        } else if (cursor > 0) {
+        if (colhash == (colhash & gayanna[cursor]) || ((colhash >> 2) ==  ((colhash >> 2) & gayanna[cursor])) || ((colhash << 2) == ((colhash << 2) & gayanna[cursor]))) {
+            prob += 1.0 / 25.0;
             cursor++;
         }
 
@@ -83,8 +94,12 @@ int drawchar(int s_row, int s_col, int e_row, int e_col, struct bmp_px_row *bmp_
             mask = mask >> ((s_col % 8) - 1);
             //byteIndex++;
         }
-
     }
+
+    if (prob > 0.7) {
+        printf("found near match\n");
+    }
+
    /* while (lbase->px->row < row_start) (lbase) = lbase->bottom;
     while (lbase->px->col < col_start) (lbase) = lbase->right;
     struct bmp_px_matrix *charbase = lbase;
