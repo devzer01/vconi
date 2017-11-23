@@ -1,3 +1,5 @@
+GCC_FLAGS=-g3 -O0
+
 all: base udb lib map src/convert src/compare generate
 	gcc -g3 -O0 -o ./bin/convert ./src/convert/main.c  lib/ucdn/ucdn.o src/vconi.o src/map/charmap.o -Isrc/map/ -Isrc/ -fno-stack-protector
 	gcc -g3 -O0 -o ./bin/compare ./src/compare/main.c -fno-stack-protector
