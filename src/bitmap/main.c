@@ -127,8 +127,9 @@ int drawchar(int s_row, int s_col, int e_row, int e_col, struct bmp_px_row *bmp_
 
 int main() {
     BITMAPINFOHEADER bitmapInfoHeader;
-    LoadBitmapFile("data/bitmap/sample.bmp", &bitmapInfoHeader);
-    struct ocr_cell *or_cell;
+    //LoadBitmapFile("data/bitmap/sample.bmp", &bitmapInfoHeader);
+    bmp_open("data/bitmap/sample.bmp");
+   /* struct ocr_cell *or_cell;
     or_root = ocr_row_root;
     printf("cell breakdown \n");
     int scanning = 1;
@@ -152,7 +153,7 @@ int main() {
             scanning = 0;
         }
     }
-
+*/
     return 0;
 }
 

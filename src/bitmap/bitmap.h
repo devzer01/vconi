@@ -59,11 +59,10 @@ typedef struct ocr_row {
 } ocr_row;
 
 typedef struct ocr_cell {
-    unsigned int start;
-    unsigned int end;
+    unsigned long int start;
+    unsigned long int end;
     struct ocr_cell *prev;
     struct ocr_cell *next;
-    struct ocr_row *or_row;
 } ocr_cell;
 
 
@@ -80,8 +79,14 @@ struct bmp_px_row *ptrRoot; // = root;
 
 struct ocr_row *ocr_row_root; // = malloc(sizeof(struct ocr_row));
 struct ocr_row *or_root; // = ocr_row_root;
-
-void *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader); //, bmp_px_matrix **base_node);
+void *bmp_init();
+void *bmp_alloc();
+void *bmp_open(char *filename);
+void *bmp_row(unsigned long int row);
+void *bmp_row_stat(unsigned long int row);
+void *bmp_stat();
+void *bmp_cell_init(struct ocr_cell *prev);
+void *bmp_col_stat(unsigned long int row, unsigned long int col, short height, struct ocr_cell **cell);
 //int drawchar(int row_start, int row_end, int col_start, int col_end, struct bmp_px_matrix **xbase);
 extern unsigned short bitcount(uint64_t group);
 #endif //CODE_BITMAP_H
