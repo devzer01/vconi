@@ -61,6 +61,8 @@ typedef struct ocr_row {
 typedef struct ocr_cell {
     unsigned long int start;
     unsigned long int end;
+    unsigned long int r_start;
+    unsigned long int r_end;
     struct ocr_cell *prev;
     struct ocr_cell *next;
 } ocr_cell;
@@ -77,17 +79,43 @@ typedef struct ocr_cell {
 struct bmp_px_row *root; // = malloc(sizeof(struct bmp_px_row));
 struct bmp_px_row *ptrRoot; // = root;
 
+BITMAPFILEHEADER *fileHeader;
+BITMAPINFOHEADER *infoHeader;
+typedef struct bmp_io_t {
+    int fd;
+    off_t len;
+    int width;
+    unsigned long int bi_width;
+    int height;
+    int b_height;
+    int size;
+    unsigned char *data;
+    unsigned int *pixels;
+    unsigned int **uc_cursor;
+    u_int64_t *ui64_cursor;
+    unsigned int *n_rpx;
+    unsigned int **ptr_cols;
+    unsigned int **ptr_rows;
+    struct ocr_cell **root_cell;
+} bmp_io_t, *ptr_bmp_io;
+ptr_bmp_io bmp_io;
+
+
 struct ocr_row *ocr_row_root; // = malloc(sizeof(struct ocr_row));
 struct ocr_row *or_root; // = ocr_row_root;
+short bmp_px(unsigned long int row, unsigned long int col);
 void *bmp_init();
 void *bmp_alloc();
-void *bmp_open(char *filename);
+void *bmp_open(const char *filename);
 void *bmp_row(unsigned long int row);
-void *bmp_row_stat(unsigned long int row);
-void *bmp_stat();
+unsigned int bmp_row_stat(unsigned long int row);
+struct ocr_cell *bmp_stat();
+void *bmp_flipw(void *mem, void *mask);
 void *bmp_cell_init(struct ocr_cell *prev);
-void *bmp_col_stat(unsigned long int row, unsigned long int col, short height, struct ocr_cell **cell);
+struct ocr_cell *bmp_col_stat(unsigned long int row, unsigned long int col, short height, struct ocr_cell *cell);
 //int drawchar(int row_start, int row_end, int col_start, int col_end, struct bmp_px_matrix **xbase);
-extern unsigned short bitcount(uint64_t group);
+extern unsigned short bmp_bitcount(uint64_t group);
+extern unsigned short bmp_bcount32(uint32_t group);
+extern unsigned short bmp_flip(void *p1, void *p2);
 #endif //CODE_BITMAP_H
 

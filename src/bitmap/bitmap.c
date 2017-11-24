@@ -11,30 +11,12 @@
 #include <unistd.h>
 #include "bitmap.h"
 
-BITMAPFILEHEADER *fileHeader;
-BITMAPINFOHEADER *infoHeader;
-typedef struct bmp_io_t {
-    int fd;
-    off_t len;
-    int width;
-    unsigned long int bi_width;
-    int height;
-    int size;
-    unsigned char *data;
-    unsigned char **pixels;
-    unsigned char **uc_cursor;
-    u_int64_t **ui64_cursor;
-    unsigned int **n_px;
-    unsigned char **ptr_cols;
-} bmp_io_t, *ptr_bmp_io;
-ptr_bmp_io bmp_io;
-
 /**
  *
  * @param filename
  * @return
  */
-void *bmp_open(char *filename)
+void *bmp_open(const char *filename)
 {
     bmp_alloc();
     bmp_io->fd = open(filename, O_RDONLY);
@@ -68,54 +50,76 @@ void *bmp_init()
     infoHeader = (BITMAPINFOHEADER *) (bmp_io->data+2+sizeof(BITMAPFILEHEADER));
 
     bmp_io->bi_width = infoHeader->biWidth;
-    bmp_io->pixels =  &bmp_io->data+(fileHeader->bOffBits);
-    bmp_io->width = ((infoHeader->biBitCount * infoHeader->biWidth) / (8 * 4));
+    bmp_io->pixels = (unsigned int *) (bmp_io->data+(fileHeader->bOffBits));
+    bmp_io->width = ((infoHeader->biBitCount * infoHeader->biWidth) + 31) / (8 * 4);
     bmp_io->height = infoHeader->biHeight;
+    bmp_io->b_height = (infoHeader->biHeight + 31 / 32);
 
-    if ((bmp_io->width * bmp_io->height) < bmp_io->size) bmp_io->width++;
-    bmp_io->width = bmp_io->width * 4;
+    //if ((bmp_io->width * bmp_io->height) < bmp_io->size) bmp_io->width++;
+    //bmp_io->width = bmp_io->width * 4;
 
     printf("bit map data size - %d \n", infoHeader->biSizeImage);
 
-    bmp_io->n_px = malloc(sizeof(unsigned int *) * bmp_io->height);
-    bmp_io->ptr_cols = malloc(sizeof(unsigned char *) * bmp_io->height); //to store starting address of each row
+    bmp_io->n_rpx = malloc(sizeof(unsigned int *) * bmp_io->height);
+    bmp_io->ptr_cols = malloc(sizeof(unsigned int *) * bmp_io->height); //to store starting address of each row
 
     unsigned int row = 0;
-
+    bmp_io->n_rpx = malloc(sizeof(unsigned int) * bmp_io->height);
     while (row < bmp_io->height) {
-        (*(bmp_io->ptr_cols+row)) = (bmp_io->data + (bmp_io->len - (bmp_io->width * row + 1)));
-        (*(bmp_io->n_px)) = malloc(sizeof(unsigned int) * bmp_io->bi_width);
+        *(bmp_io->ptr_cols+row) =  (bmp_io->pixels + ((bmp_io->width * (bmp_io->height - 1)) - row));
+        *(bmp_io->n_rpx+row) = 0;
+        row++;
     }
 }
 
-void *bmp_row(unsigned long int row)
-{
-    return bmp_io->ui64_cursor = (u_int64_t  **) (*(bmp_io->ptr_cols+row));
-}
 
-void *bmp_stat()
+struct ocr_cell *bmp_stat()
 {
     unsigned long int row = 0;
     while(row < bmp_io->height) {
         bmp_row_stat(row++);
     }
+    //struct ocr_cell **cell = malloc(sizeof(struct ocr_cell *) * 24);
     struct ocr_cell *cell = malloc(sizeof(struct ocr_cell));
-    struct ocr_cell *root_cell = cell;
+    struct ocr_cell *rcell = cell;
+    struct ocr_cell *root = cell;
+    short n_cell = 0;
+    row = 1;
+    cell->r_start = 0;
+    if (*(bmp_io->n_rpx) != 0) cell->start = 1;
+    while(row <= bmp_io->height) {
+        if (cell->r_start != 0) {
+            while((*(bmp_io->n_rpx+row++) != 0) || row == bmp_io->height);
+            cell->r_start--;  cell->r_end = row - cell->r_start;
+            cell = bmp_col_stat(cell->r_start, 0, cell->r_end, cell);
+            cell->r_start = 0;
+        }
+        row++;
+        if (*(bmp_io->n_rpx+row) != 0) cell->r_start = row;
+    }
 
-    bmp_col_stat(0, 0, 10, &root_cell);
+    return root;
 
 }
 
-void *bmp_row_stat(unsigned long int row)
+unsigned int bmp_row_stat(unsigned long int row)
 {
     unsigned long int col = 0;
-    *(*(bmp_io->n_px+row)) = 0;
+    bmp_io->ptr_rows = malloc(sizeof(unsigned int *) * bmp_io->height);
+    (*(bmp_io->n_rpx+row)) = 0;
     while((col * 64) < bmp_io->bi_width) {
-        if (*(*(bmp_io->ui64_cursor+row)+col) != 0) {
-            *(*(bmp_io->n_px+row)) += bitcount((**bmp_io->ui64_cursor));
+        bmp_io->ui64_cursor = (u_int64_t *) ((u_int64_t) *(bmp_io->ptr_cols + row) + col);
+        if (*bmp_io->ui64_cursor != 0) {
+            if (bmp_io->bi_width < 32) {
+                u_int32_t ptr =  (u_int32_t) *(*(bmp_io->ptr_cols + row) + col);
+                (*(bmp_io->n_rpx + row)) += bmp_bcount32(ptr);
+            } else {
+                (*(bmp_io->n_rpx + row)) += bmp_bitcount(*bmp_io->ui64_cursor);
+            }
         }
         col++;
     }
+    return (*(bmp_io->n_rpx+row));
 }
 
 void *bmp_cell_init(struct ocr_cell *prev)
@@ -124,34 +128,46 @@ void *bmp_cell_init(struct ocr_cell *prev)
     cell->prev = prev;
     prev->next = cell;
     cell->start = 0;
+    cell->end = 0;
     return cell;
 }
 
-void *bmp_col_stat(unsigned long int row, unsigned long int col, short height, struct ocr_cell **cell)
+short bmp_px(unsigned long int row, unsigned long int col)
 {
-    unsigned int byte = 0;
-    unsigned char mask = 0b10000000;
-    short px_count = 0, last_px_count = 0;
-    while (col <= bmp_io->bi_width) {
-        while (mask > 0) {
-            px_count = 0;
-            for (unsigned long int l_row = row; l_row < (row + height); l_row++) {
-                if ((*(*(bmp_io->ptr_cols+l_row)+byte) & mask) == mask) {
-                    px_count++;
-                }
-            }
-            if (last_px_count == 0 && px_count != 0) {
-                (*cell)->start = col;
-            } else if (last_px_count != 0 && px_count == 0 && (*cell)->start != 0) {
-                (*cell)->end = col;
-                (*cell) = bmp_cell_init(*cell);
-            }
-            last_px_count = px_count;
-            mask = mask >> 1;
-
-        }
-        col = col + 8;
-        byte++;
-        mask = 0b10000000;
+    if (row >= bmp_io->height) row--;
+    unsigned int lcol = (unsigned int) (col + 31) / 32;
+    unsigned char mask = (unsigned char) 0b10000000 >> ((unsigned char)(col % 8));
+    if (*(*(bmp_io->ptr_cols+row)+lcol) & mask) {
+        return 1;
     }
+    return 0;
+}
+
+struct ocr_cell *bmp_col_stat(unsigned long int row, unsigned long int col, short height, struct ocr_cell *cell)
+{
+    short px_count = 0, last_px_count = 0;
+
+    while (col <= bmp_io->bi_width) {
+        px_count = 0;
+        short lrow = 0;
+        while (lrow < height) {
+            px_count += bmp_px(row + lrow, col);
+            lrow++;
+        }
+        if (last_px_count == 0 && px_count != 0) {
+            (cell)->start = col;
+        } else if (last_px_count != 0 && px_count == 0 && (cell)->start != 0) {
+            (cell)->end = col;
+            (cell) = bmp_cell_init(cell);
+            (cell)->r_start = row;
+            (cell)->r_end = row + height;
+        }
+        last_px_count = px_count;
+        col++;
+    }
+    if ((cell)->end == 0 && (cell)->start != 0) {
+        (cell)->end = col-1;
+        (cell) = bmp_cell_init(cell);
+    }
+    return (cell);
 }
