@@ -20,6 +20,12 @@ void *bmp_open(const char *filename)
 {
     bmp_alloc();
     bmp_io->fd = open(filename, O_RDONLY);
+
+    if (bmp_io->fd == -1) {
+        printf("unable to open file\n");
+        exit(-1);
+    }
+
     bmp_io->len = lseek(bmp_io->fd, 0, SEEK_END);
     bmp_io->data = mmap(NULL, (size_t) bmp_io->len, PROT_READ, MAP_PRIVATE, bmp_io->fd, 0);
 
@@ -77,7 +83,8 @@ struct ocr_cell *bmp_stat()
 {
     unsigned long int row = 0;
     while(row < bmp_io->height) {
-        bmp_row_stat(row++);
+        bmp_row_stat(row);
+        row++;
     }
     //struct ocr_cell **cell = malloc(sizeof(struct ocr_cell *) * 24);
     struct ocr_cell *cell = malloc(sizeof(struct ocr_cell));

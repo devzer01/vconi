@@ -93,7 +93,7 @@ typedef struct bmp_io_t {
     unsigned int *pixels;
     unsigned int **uc_cursor;
     u_int64_t *ui64_cursor;
-    unsigned int *n_rpx;
+    unsigned int *n_rpx; //pixel count
     unsigned int **ptr_cols;
     unsigned int **ptr_rows;
     struct ocr_cell **root_cell;

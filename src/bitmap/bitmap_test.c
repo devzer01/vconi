@@ -5,11 +5,11 @@
 #include "bitmap.h"
 
 int main() {
-    const char *files[3] = {"test-data/8x8-1.bmp", "test-data/8x8-2.bmp", "test-data/8x8-3.bmp"};
-    for (int i = 0; i < 3; i++) {
+    const char *files[3] = {"test-data/8x8-1.bmp", "test-data/64x64-1.bmp", "test-data/8x8-3.bmp"};
+    for (int i = 0; i < 2; i++) {
         printf("file: %s \n", files[i]);
         bmp_open(files[i]);
-        printf("w*h: %lu * %d \n", bmp_io->bi_width, bmp_io->height);
+        printf("w*h: %lu * %d [%d] \n", bmp_io->bi_width, bmp_io->height, bmp_io->width);
         printf("px(n) %#0x \n", (*bmp_io->pixels & 0b10000000));
         //1,0,0,1,1,0,0,1
         for (int h = 0; h < bmp_io->height; h++) {
