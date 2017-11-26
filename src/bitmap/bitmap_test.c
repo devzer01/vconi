@@ -5,99 +5,107 @@
 #include "bitmap.h"
 
 
-void functiona_tests() {
-    const char *files[3] = {"test-data/8x8-1.bmp", "test-data/65x65-1.bmp", "test-data/8x8-3.bmp"};
-    for (int i = 1; i < 2; i++) {
-        printf("file: %s \n", files[i]);
-        bmp_open(files[i]);
-        printf("w*h: %lu * %d [%d] \n", bmp_io->bi_width, bmp_io->height, bmp_io->width);
-        printf("px(n) %#0x \n", (*bmp_io->bmp_data & 0b10000000));
-        //1,0,0,1,1,0,0,1
-        for (int h = 0; h < bmp_io->height; h++) {
-            u_int32_t ptr =  (u_int32_t) *(*(bmp_io->ptr_cols + h));
+bmp_io_t test_data[3] =
+        {
+                {
+                 .filename = "test-data/8x8-1.bmp",
+                 .bit_per_px = 1,
+                 .px.width = 8,
+                 .px.height = 8,
+                 .ints.width = 1,
+                 .ints.height = 1,
+                 .chars.width = 4,
+                 .chars.height = 4
+                },
+                {
+                .filename = "test-data/8x8-5.bmp",
+                .bit_per_px = 1,
+                .px.width = 11,
+                .px.height = 11,
+                .ints.width = 1,
+                .ints.height = 1,
+                .chars.width = 4,
+                .chars.height = 4
+                },
+                {
+                        .filename = "test-data/65x65-1.bmp",
+                        .bit_per_px = 1,
+                        .px.width = 65,
+                        .px.height = 65,
+                        .ints.width = 3,
+                        .ints.height = 3,
+                        .chars.width = 12,
+                        .chars.height = 12
+                },
 
-            printf("row %d - %#0x %hd %d \n", h, *(*(bmp_io->ptr_cols + h)),
-                   bmp_bcount32(ptr), bmp_row_bit_count(h));
-        }
+        };
 
-
-        /*      printf("0,0 %#0x \t %d \n", __col2mask(7), __bit2index(7));
-              printf("0,7 %d \t 7,0 %d \t 0,0 %d \n", bmp_px(0, 7), bmp_px(7, 0), bmp_px(0, 0));
-              struct ocr_cell *row = malloc(sizeof(struct ocr_cell));
-              row->index = 0;
-              bmp_row_stat(row);*/
-        struct ocr_cell *cell = malloc(sizeof(struct ocr_cell));
-        /*    cell->start = -1;
-            cell->end = -1;
-            cell->r_start = 0;
-            cell->r_end = 0;
-            struct ocr_cell *root = cell;
-            struct ocr_cell *last = bmp_col_stat(0, 0, 1, cell);
-            last->r_start = 3; last->r_end = 4;
-            last = bmp_col_stat(3, 0, 2, last);
-            last->r_start = 7; last->r_end = 7;
-            bmp_col_stat(7, 0, 1, last);
-            printf("c1\tc2\tr1\tr2\n");
-            (cell) = root;
-            while (cell->start != -1) {
-                printf("%ld\t%ld\t%ld\t%ld\n", cell->start, cell->end, cell->r_start, cell->r_end);
-                (cell) = (cell)->next;
-            }*/
-        printf("-----------------------\n");
-        struct ocr_cell *row_root = malloc(sizeof(struct ocr_cell));
-        row_root->index = 0;
-        struct ocr_cell *stat_last = bmp_stat(row_root);
-        (cell) = row_root;
-        while (cell->index < stat_last->index) {
-            struct ocr_cell *ccell = cell->first;
-            while (ccell->index < cell->last->index) {
-                printf("%ld\t%ld\t%ld\t%ld\n", ccell->start, ccell->end, ccell->r_start, ccell->r_end);
-                (ccell) = (ccell)->next;
-            }
-            (cell) = (cell)->next;
-        }
-
-    }
-
-}
-
-void bmp_calc_tests()
+void bmp_static_test()
 {
-    int dimensions[4][2] = {
-            {3, 65}, {1, 31}, {2, 33},
-
+    unsigned long int data[4*3][2] = {
+            {8, 0}, {7, 0}, {31, 0}, {33, 1},
+            {32, 0}, {0, 0}, {65, 0}, {64, 1},
+            {9, 0}, {96, 0}, {75, 0}, {39, 1},
     };
-
-    /**
-     * /*unsigned int row = bmp_io->height;
-    bmp_io->n_rpx = malloc(sizeof(unsigned int) * bmp_io->height);
-    *(bmp_io->ptr_cols) =  (bmp_io->pixels + bmp_row_offset(0));
-    while (row < bmp_io->height) {
-        *(bmp_io->ptr_cols+row) =  *(bmp_io->ptr_cols)
-        *(bmp_io->n_rpx+row) = 0;
-        row--;
-    }*/
-
-
-    bmp_open("test-data/8x8-5.bmp");
-    printf("height %d width %d bi-width %ld int width %d \n", bmp_io->height, bmp_io->width, bmp_io->bi_width, bmp_io->b_height);
-    printf("end 11 %d 17 %d 25 %d 23 %d 31 %d  34 %d \n",  bmp_edge_mask(11), bmp_edge_mask(17), bmp_edge_mask(25), bmp_edge_mask(23), bmp_edge_mask(31), bmp_edge_mask(34));
-    unsigned int **matrix = bmp_init_matrix(bmp_io->bmp_data, bmp_io->height, bmp_io->width);
-    unsigned int row = 0;
-    while(row < bmp_io->height) {
-        bmp_draw_row(matrix, row, bmp_io->width, bmp_io->bi_width);
-        row++;
+    for (int i = 0; i < 12; i++) {
+        printf("col %ld %ld int-idx %d char-idx %d - %#0x - %#0x \n",
+               data[i][0], data[i][1],
+               __bmp_bit2intidx(data[i][0]),
+               __bmp_bit2charidx(data[i][0]),
+               __col2charmask(data[i][0]),
+               __col2intmask(data[i][0])
+        );
     }
+}
 
-    /*for (int i = 0; i < 1; i++) {
-        printf("%d -  %d \n ", bmp_io->width,  bmp_io->width == dimensions[i][0]);
-        printf("%d -  %d \n ", bmp_io->height,  bmp_io->height == dimensions[i][1]); //bmp_io->height = dimensions[i][1];
+void bmp_position_test()
+{
+    bmp_open("test-data/65x65-1.bmp");
 
-        printf("%d %d %ld\n", dimensions[i][0], dimensions[i][1], bmp_row_offset(1));
+    unsigned int index = bmp_row_offset(8) -1; // if negative then out of bound
+    printf("offset 0:%d \n", index);
+    printf("row data %#0x %#0x %#0x \n", *(bmp_io->bmp_data+index), *(bmp_io->bmp_data+index+1), bmp_io->bmp_data[index+2] );
+    int i = 0;
+    /*while(i < bmp_io->ints.width) {
+        printf("test %d ", bmp_io->bmp_data[index+i]);
+        i++;
+    }*/
+    /*for (int i = 0; i < bmp_io->px.height; i++) {
+        for (int x = 0; x < bmp_io->px.width; x++) {
+            //printf(" %d ", bmp_px(i, x));
+        }
+        printf("\n");
     }*/
 }
 
-int main() {
-    bmp_calc_tests();
-        return 0;
+void bmp_test_init()
+{
+    for (int i = 0; i < 3; i++) {
+
+        bmp_open(test_data[i].filename);
+
+        struct bmp_dimension _px[2] = {bmp_io->px, test_data[i].px};
+        struct bmp_dimension _ints[2] = {bmp_io->ints, test_data[i].ints};
+        struct bmp_dimension _chars[2] = {bmp_io->chars, test_data[i].chars};
+
+
+        printf("pixels %lu %lu - %lu  %lu\n", 
+               _px[0].width, _px[1].width, _px[0].height, _px[1].height);
+
+        printf("ints %lu %lu - %lu  %lu\n",
+               _ints[0].width, _ints[1].width, _ints[0].height, _ints[1].height);
+
+        printf("chars %lu %lu - %lu  %lu\n",
+               _chars[0].width, _chars[1].width, _chars[0].height, _chars[1].height);
+
+    }
+}
+
+
+int main()
+{
+    //bmp_test_init();
+    //bmp_static_test();
+    bmp_position_test();
+    return 0;
 }

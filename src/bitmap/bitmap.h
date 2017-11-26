@@ -90,8 +90,15 @@ typedef struct bmp_dimension {
     unsigned long int width;
 } bmp_dimension;
 
+typedef struct bmp_header_t {
+    unsigned int offset;
+    unsigned int size;
+}bmp_header, *ptr_bmp_header;
+
 typedef struct bmp_io_t {
     int fd;
+    const char *filename;
+    bmp_header header;
     off_t len;
     struct bmp_dimension px;
     struct bmp_dimension chars;
@@ -105,11 +112,11 @@ typedef struct bmp_io_t {
 } bmp_io_t, *ptr_bmp_io;
 ptr_bmp_io bmp_io;
 
-
+unsigned int *bmp_row_addr(unsigned long int row);
 struct ocr_row *ocr_row_root; // = malloc(sizeof(struct ocr_row));
 struct ocr_row *or_root; // = ocr_row_root;
 unsigned long bmp_row_offset(unsigned long int row);
-unsigned int __bit2index(unsigned long int _bitcol);
+unsigned int __bmp_bit2intidx(unsigned long int _bitcol);
 unsigned char __col2mask(unsigned long int _bitcol);
 short bmp_px(unsigned long int row, unsigned long int col);
 void *bmp_init();
@@ -118,6 +125,7 @@ void bmp_draw_row(unsigned int **matrix, unsigned int row, unsigned int width, u
 void *bmp_open(const char *filename);
 void *bmp_row(unsigned long int row);
 unsigned int bmp_row_bit_count(unsigned long int row);
+unsigned int *bmp_col_buffer(unsigned long int col, unsigned int *buffer, unsigned long int height);
 struct ocr_cell *bmp_stat(struct ocr_cell *cell);
 void *bmp_flipw(void *mem, void *mask);
 struct ocr_cell *bmp_cell_init(struct ocr_cell *prev);
@@ -129,5 +137,8 @@ unsigned int bmp_edge_mask(unsigned long int px_width);
 extern unsigned short bmp_bitcount(uint64_t group);
 extern unsigned short bmp_bcount32(uint32_t group);
 extern unsigned short bmp_flip(void *p1, void *p2);
+unsigned int __bmp_bit2charidx(unsigned long int _bitcol);
+unsigned char __col2charmask(unsigned long int _bitcol);
+unsigned int __col2intmask(unsigned long int _bitcol);
 #endif //CODE_BITMAP_H
 
