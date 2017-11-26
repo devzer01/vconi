@@ -11,7 +11,7 @@ void functiona_tests() {
         printf("file: %s \n", files[i]);
         bmp_open(files[i]);
         printf("w*h: %lu * %d [%d] \n", bmp_io->bi_width, bmp_io->height, bmp_io->width);
-        printf("px(n) %#0x \n", (*bmp_io->pixels & 0b10000000));
+        printf("px(n) %#0x \n", (*bmp_io->bmp_data & 0b10000000));
         //1,0,0,1,1,0,0,1
         for (int h = 0; h < bmp_io->height; h++) {
             u_int32_t ptr =  (u_int32_t) *(*(bmp_io->ptr_cols + h));
@@ -82,7 +82,7 @@ void bmp_calc_tests()
     bmp_open("test-data/8x8-5.bmp");
     printf("height %d width %d bi-width %ld int width %d \n", bmp_io->height, bmp_io->width, bmp_io->bi_width, bmp_io->b_height);
     printf("end 11 %d 17 %d 25 %d 23 %d 31 %d  34 %d \n",  bmp_edge_mask(11), bmp_edge_mask(17), bmp_edge_mask(25), bmp_edge_mask(23), bmp_edge_mask(31), bmp_edge_mask(34));
-    unsigned int **matrix = bmp_init_matrix(bmp_io->pixels, bmp_io->height, bmp_io->width);
+    unsigned int **matrix = bmp_init_matrix(bmp_io->bmp_data, bmp_io->height, bmp_io->width);
     unsigned int row = 0;
     while(row < bmp_io->height) {
         bmp_draw_row(matrix, row, bmp_io->width, bmp_io->bi_width);

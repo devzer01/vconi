@@ -18,20 +18,20 @@ typedef struct tagBITMAPFILEHEADER
     //unsigned short bfType;  //specifies the file type
     unsigned int bfSize;  //specifies the size in bytes of the bitmap file
     unsigned int bfReserved1;  //reserved; must be 0
-    unsigned int bOffBits;  //species the offset in bytes from the bitmapfileheader to the bitmap bits
+    unsigned int bOffBits;  //species the offset in bytes from the bitmapfileheader to the bitmap px
 }BITMAPFILEHEADER;
 
 typedef struct tagBITMAPINFOHEADER
 {
     unsigned int biSize;  //specifies the number of bytes required by the struct
-    unsigned int biWidth;  //specifies width in pixels
-    unsigned int biHeight;  //species height in pixels
+    unsigned int biWidth;  //specifies width in bmp_data
+    unsigned int biHeight;  //species height in bmp_data
     unsigned short biPlanes; //specifies the number of color planes, must be 1
     unsigned short biBitCount; //specifies the number of bit per pixel
     unsigned int biCompression;//spcifies the type of compression
     unsigned int biSizeImage;  //size of image in bytes
-    int biXPelsPerMeter;  //number of pixels per meter in x axis
-    int biYPelsPerMeter;  //number of pixels per meter in y axis
+    int biXPelsPerMeter;  //number of bmp_data per meter in x axis
+    int biYPelsPerMeter;  //number of bmp_data per meter in y axis
     unsigned int biClrUsed;  //number of colors used by th ebitmap
     unsigned int biClrImportant;  //number of colors that are important
     unsigned char prof[4];
@@ -84,23 +84,24 @@ struct bmp_px_row *ptrRoot; // = root;
 
 BITMAPFILEHEADER *fileHeader;
 BITMAPINFOHEADER *infoHeader;
+
+typedef struct bmp_dimension {
+    unsigned long int height;
+    unsigned long int width;
+} bmp_dimension;
+
 typedef struct bmp_io_t {
     int fd;
     off_t len;
-    int width;
-    unsigned int byte_width;
-    unsigned long int bi_width;
-    int height;
-    int b_height;
-    int size;
+    struct bmp_dimension px;
+    struct bmp_dimension chars;
+    struct bmp_dimension ints;
+    int bit_per_px;
     unsigned char *data;
-    unsigned int *pixels;
-    unsigned int **uc_cursor;
-    u_int64_t *ui64_cursor;
-    unsigned int *n_rpx; //pixel count
-    unsigned int **ptr_cols;
-    unsigned int **ptr_rows;
-    struct ocr_cell **root_cell;
+    unsigned int *bmp_data;
+    unsigned int *row_px_count;
+    unsigned int *col_px_count;
+    struct ocr_cell *root_cell;
 } bmp_io_t, *ptr_bmp_io;
 ptr_bmp_io bmp_io;
 
@@ -108,12 +109,11 @@ ptr_bmp_io bmp_io;
 struct ocr_row *ocr_row_root; // = malloc(sizeof(struct ocr_row));
 struct ocr_row *or_root; // = ocr_row_root;
 unsigned long bmp_row_offset(unsigned long int row);
-
 unsigned int __bit2index(unsigned long int _bitcol);
 unsigned char __col2mask(unsigned long int _bitcol);
 short bmp_px(unsigned long int row, unsigned long int col);
 void *bmp_init();
-void *bmp_alloc();
+void *bmp_alloc(struct bmp_io_t *_bmp_io);
 void bmp_draw_row(unsigned int **matrix, unsigned int row, unsigned int width, unsigned long int px_width);
 void *bmp_open(const char *filename);
 void *bmp_row(unsigned long int row);
