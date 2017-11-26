@@ -11,6 +11,7 @@
 #include <time.h>
 #include "udb.h"
 #include "vconi.h"
+#include "../vconi.h"
 
 
 int z_line = 0;
