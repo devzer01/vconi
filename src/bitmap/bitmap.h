@@ -9,6 +9,9 @@
 #ifndef CODE_BITMAP_H
 #define CODE_BITMAP_H
 
+#define PX_FIRST 0x80000000
+#define PX_LAST 
+
 typedef unsigned short WORD;
 typedef unsigned int DWORD;
 typedef unsigned long LONG;
@@ -117,7 +120,7 @@ struct ocr_row *ocr_row_root; // = malloc(sizeof(struct ocr_row));
 struct ocr_row *or_root; // = ocr_row_root;
 unsigned long bmp_row_offset(unsigned long int row);
 unsigned int __bmp_bit2intidx(unsigned long int _bitcol);
-unsigned char __col2mask(unsigned long int _bitcol);
+unsigned char __col2charmask(unsigned long int _bitcol);
 short bmp_px(unsigned long int row, unsigned long int col);
 void *bmp_init();
 void *bmp_alloc(struct bmp_io_t *_bmp_io);
@@ -125,7 +128,8 @@ void bmp_draw_row(unsigned int **matrix, unsigned int row, unsigned int width, u
 void *bmp_open(const char *filename);
 void *bmp_row(unsigned long int row);
 unsigned int bmp_row_bit_count(unsigned long int row);
-unsigned int *bmp_col_buffer(unsigned long int col, unsigned int *buffer, unsigned long int height);
+unsigned int *bmp_row_buffer(unsigned long int row, unsigned int **buffer, unsigned long int width);
+unsigned int *bmp_col_buffer(unsigned long int col, unsigned int **buffer, unsigned long int height);
 struct ocr_cell *bmp_stat(struct ocr_cell *cell);
 void *bmp_flipw(void *mem, void *mask);
 struct ocr_cell *bmp_cell_init(struct ocr_cell *prev);
@@ -140,5 +144,47 @@ extern unsigned short bmp_flip(void *p1, void *p2);
 unsigned int __bmp_bit2charidx(unsigned long int _bitcol);
 unsigned char __col2charmask(unsigned long int _bitcol);
 unsigned int __col2intmask(unsigned long int _bitcol);
+unsigned int bmp_col_bit_count(unsigned long int col);
+
+/* --- PRINTF_BYTE_TO_BINARY macro's --- */
+#define PRINTF_BINARY_SEPARATOR
+#define PRINTF_BINARY_PATTERN_INT8 "%c%c%c%c%c%c%c%c "
+#define PRINTF_BYTE_TO_BINARY_BE_INT8(i) \
+    (((i) & 0x01ll) ? '1' : '0'), \
+    (((i) & 0x02ll) ? '1' : '0'), \
+    (((i) & 0x04ll) ? '1' : '0'), \
+    (((i) & 0x08ll) ? '1' : '0'), \
+    (((i) & 0x10ll) ? '1' : '0'), \
+    (((i) & 0x20ll) ? '1' : '0'), \
+    (((i) & 0x40ll) ? '1' : '0'), \
+    (((i) & 0x80ll) ? '1' : '0')
+
+#define PRINTF_BYTE_TO_BINARY_INT8(i)    \
+    (((i) & 0x80ll) ? '1' : '0'), \
+    (((i) & 0x40ll) ? '1' : '0'), \
+    (((i) & 0x20ll) ? '1' : '0'), \
+    (((i) & 0x10ll) ? '1' : '0'), \
+    (((i) & 0x08ll) ? '1' : '0'), \
+    (((i) & 0x04ll) ? '1' : '0'), \
+    (((i) & 0x02ll) ? '1' : '0'), \
+    (((i) & 0x01ll) ? '1' : '0')
+
+#define PRINTF_BINARY_PATTERN_INT16 \
+    PRINTF_BINARY_PATTERN_INT8               PRINTF_BINARY_SEPARATOR              PRINTF_BINARY_PATTERN_INT8
+#define PRINTF_BYTE_TO_BINARY_INT16(i) \
+    PRINTF_BYTE_TO_BINARY_INT8(i), PRINTF_BYTE_TO_BINARY_INT8((i) >> 8)
+#define PRINTF_BINARY_PATTERN_INT32 \
+    PRINTF_BINARY_PATTERN_INT16              PRINTF_BINARY_SEPARATOR              PRINTF_BINARY_PATTERN_INT16
+#define PRINTF_BYTE_TO_BINARY_INT32(i) \
+    PRINTF_BYTE_TO_BINARY_INT16(i), PRINTF_BYTE_TO_BINARY_INT16((i) >> 16)
+#define PRINTF_BINARY_PATTERN_INT64    \
+    PRINTF_BINARY_PATTERN_INT32              PRINTF_BINARY_SEPARATOR              PRINTF_BINARY_PATTERN_INT32
+#define PRINTF_BYTE_TO_BINARY_INT64(i) \
+    PRINTF_BYTE_TO_BINARY_INT32((i) >> 32), PRINTF_BYTE_TO_BINARY_INT32(i)
+/* --- end macros --- */
+
+#define ptrval(ptr, val) \
+    *(ptr+val)
+
 #endif //CODE_BITMAP_H
 

@@ -86,6 +86,8 @@ void *bmp_init()
 
     bmp_io->chars.width = bmp_io->ints.width * 4;
     bmp_io->chars.height = bmp_io->ints.height * 4;
+
+    bmp_io->row_px_count = malloc(sizeof(unsigned int) * bmp_io->px.height);
 }
 
 /**
@@ -98,10 +100,7 @@ unsigned int __bmp_bit2intidx(unsigned long int _bitcol)
     if (_bitcol < 32) {
         return 0;
     }
-    unsigned  int _col = (_bitcol / 32);
-            //if (_bitcol % 32 > 0) _col++;
-
-    return _col;
+    return (_bitcol / 32);
 }
 
 /**
@@ -130,8 +129,9 @@ unsigned char __col2charmask(unsigned long int _bitcol)
 
 unsigned int __col2intmask(unsigned long int _bitcol)
 {
-    unsigned long int _lbyteindex = __bmp_bit2intidx(_bitcol);
-    return (unsigned int) (0b10000000 >> ((unsigned char)(_bitcol % 8))) << _lbyteindex;
+    unsigned int index = (_bitcol % 32);
+    unsigned int needle = 0x00000001 << index;
+    return  needle;
 }
 
 /**
@@ -154,46 +154,37 @@ short bmp_px(unsigned long int row, unsigned long int col)
 
 unsigned long bmp_row_offset(unsigned long int row)
 {
-    unsigned long first = ((bmp_io->ints.width * (bmp_io->px.height - 1)));
-    return (first - (bmp_io->ints.width * row));
+    unsigned long int l_row = (bmp_io->px.height - row - 1);
+    return (bmp_io->ints.width * l_row);
 }
 
-unsigned int *bmp_row_buffer(unsigned long int row, unsigned int *buffer, unsigned long int length)
+unsigned int *bmp_row_buffer(unsigned long int row, unsigned int **buffer, unsigned long int width)
 {
-    buffer = malloc(sizeof(unsigned int) * (bmp_io->ints.width * length));
-    memcpy(buffer, &bmp_io->bmp_data[bmp_row_offset(row)], bmp_io->ints.width);
-    return buffer;
+    *buffer = malloc(sizeof(unsigned int) * width);
+    memcpy(*buffer, (unsigned int *) &bmp_io->bmp_data[bmp_row_offset(row)], sizeof(unsigned int) * width);
+    return *buffer;
 }
 
 unsigned int bmp_col_index(unsigned int col)
 {
     unsigned int __idx = __bmp_bit2intidx(col);
-
 }
 
-unsigned int *bmp_col_buffer(unsigned long int col, unsigned int *buffer, unsigned long int height)
+unsigned int *bmp_col_buffer(unsigned long int col, unsigned int **buffer, unsigned long int height)
 {
-    buffer = malloc(sizeof(unsigned int) * height);
-    unsigned int *_buffer = buffer;
-    unsigned long int _height = height;
-    while (height > 0) {
-        unsigned int __idxa = (bmp_io->ints.width * height - 1) + __bmp_bit2intidx(col);
-        *buffer++ = (bmp_io->bmp_data[__idxa]);
-        height--;
+    *buffer = malloc(sizeof(unsigned int) * height);
+    unsigned long int _height = 0; //(height - 1);
+    unsigned char maskdex = 0b10000000;
+    unsigned long int ix = 0;
+    while (_height < height) {
+        short intdex =  __bmp_bit2intidx(col);
+        memcpy((*buffer+_height), (unsigned int *) &bmp_io->bmp_data[bmp_row_offset(_height)], sizeof(unsigned int));
+        //*buffer = bmp_row_buffer(_height, &(*buffer), bmp_io->ints.width);
+        //memcpy(*buffer+_height, (unsigned int *) &bmp_io->bmp_data[bmp_row_offset(_height)+intdex], sizeof(unsigned int));
+        _height++;
     }
 
-    unsigned int mask = __col2intmask(col);
-    unsigned int *colbuffer = malloc(sizeof(unsigned int) * bmp_io->ints.height);
-    while(height < _height) {
-        unsigned int _lindex = __bmp_bit2intidx(height);
-        unsigned int _lmask = __col2intmask(height);
-        if ((*(buffer+height-1) & mask) == mask) {
-            *(colbuffer+_lindex) = *(colbuffer+_lindex) ^ _lmask;
-        }
-        height++;
-    }
-
-    return colbuffer;
+    return (*buffer);
 }
 
 /**
@@ -205,13 +196,12 @@ unsigned int bmp_row_bit_count(unsigned long int row)
 {
     unsigned long int col = 0;
     bmp_io->row_px_count[row] = 0;
-    unsigned int *buffer = malloc(sizeof(unsigned int) * bmp_io->ints.width);
-            buffer = bmp_row_buffer(row, buffer, 1);
-
-    while((col * 31) < bmp_io->px.width) {
-        u_int32_t ptr =  (u_int32_t) buffer[col];
-        bmp_io->row_px_count[row] += bmp_bcount32(ptr);
-        col++;
+    uint32_t *buffer = malloc(sizeof(unsigned int) * bmp_io->ints.width);
+            buffer = bmp_row_buffer(row, &buffer,  bmp_io->ints.width);
+    unsigned long int index = 0;
+    while (index < bmp_io->ints.width) {
+        bmp_io->row_px_count[row] += bmp_bcount32(*(buffer+index));
+        index++;
     }
     return bmp_io->row_px_count[row];
 }
@@ -225,13 +215,12 @@ unsigned int bmp_col_bit_count(unsigned long int col)
 {
     bmp_io->row_px_count[col] = 0;
     unsigned int *buffer = malloc(sizeof(unsigned int) * bmp_io->px.height);
-    unsigned int *_buffer = buffer;
-    unsigned int *colbuffer = bmp_col_buffer(col, buffer, bmp_io->px.height);
-
-    while((col * 31) < bmp_io->px.height) {
-        u_int32_t ptr =  (u_int32_t) colbuffer[col];
-        bmp_io->col_px_count[col] += bmp_bcount32(ptr);
-        col++;
+    buffer = bmp_col_buffer(col, &buffer, bmp_io->px.height);
+    unsigned long int _height = bmp_io->ints.height - 1;
+    while(_height <= 0) {
+        u_int32_t val = (u_int32_t) (ptrval(buffer,_height) & __col2intmask(col));
+        bmp_io->col_px_count[col] += bmp_bcount32(val);
+        _height--;
     }
     return bmp_io->row_px_count[col];
 }
