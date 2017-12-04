@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include "stats.h"
 
 #ifndef CODE_BITMAP_H
 #define CODE_BITMAP_H
@@ -149,6 +150,7 @@ unsigned int *bmp_col_counts();
 unsigned int *bmp_col_buffer_offset(unsigned long int col, unsigned int **buffer, unsigned long int offset, unsigned long int height);
 unsigned int *bmp_col_counts_offset(unsigned long int _col_start, unsigned long int _col_end, unsigned long int _row_start, unsigned long int _row_end);
 unsigned int bmp_col_bit_count_offset(unsigned long int col, unsigned long int offset, unsigned long int length);
+unsigned char *bmp_matrix_get(struct stat_cell_t **cell);
 /* --- PRINTF_BYTE_TO_BINARY macro's --- */
 #define PRINTF_BINARY_SEPARATOR
 #define PRINTF_BINARY_PATTERN_INT8 "%c%c%c%c%c%c%c%c "

@@ -232,7 +232,8 @@ void stat_unit_test()
     while(cell != NULL) {
 
         printf(" [(%ld, %ld),(%ld, %ld)] , ", cell->row.start, cell->col.start, cell->row.end, cell->col.end);
-
+        unsigned char *buffer = bmp_matrix_get(&cell);
+        printf("%s", buffer);
         if (cell->next != NULL && cell->row.start!= cell->next->row.start) {
             printf("\n");
         }

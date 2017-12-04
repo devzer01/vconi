@@ -170,7 +170,28 @@ unsigned int *bmp_col_buffer_offset(unsigned long int col, unsigned int **buffer
 
 unsigned char *bmp_matrix_get(struct stat_cell_t **cell)
 {
-    bmp_row_buffer((*cell)->row.start, );
+    unsigned long int height = ((*cell)->row.end - (*cell)->row.start) + 1;
+    unsigned long int _row = 0;
+    unsigned int **matrix = malloc(sizeof(unsigned int *) * height);
+    while (_row < height) {
+        unsigned int *buffer = malloc(sizeof(unsigned int) * bmp_io->ints.width);
+        buffer = bmp_row_buffer((*cell)->row.start + _row, &buffer, bmp_io->ints.width);
+        *(matrix + _row) = malloc(sizeof(unsigned int) * bmp_io->ints.width);
+        memcpy(*(matrix + _row), buffer, bmp_io->chars.width);
+        _row++;
+    }
+    _row = 0;
+    unsigned int column = __bmp_bit2intidx((*cell)->col.start);
+    unsigned long int width = ((*cell)->col.end - (*cell)->col.start) + 1;
+    unsigned long int bwidth = width / 8;
+    unsigned char *charbuff = malloc(sizeof(unsigned char *) * bwidth * height);
+    while(_row < height) {
+        memcpy(charbuff+(bwidth*_row), ((*(matrix+_row))+column), bwidth);
+        //set end+byte boundary to 0
+        _row++;
+    }
+
+    return charbuff;
 }
 
 /**
