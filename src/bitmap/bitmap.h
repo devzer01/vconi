@@ -142,10 +142,13 @@ extern unsigned short bmp_bitcount(uint64_t group);
 extern unsigned short bmp_bcount32(uint32_t group);
 extern unsigned short bmp_flip(void *p1, void *p2);
 unsigned int __bmp_bit2charidx(unsigned long int _bitcol);
-unsigned char __col2charmask(unsigned long int _bitcol);
-unsigned int __col2intmask(unsigned long int _bitcol);
+unsigned int __bmp_col2mask(unsigned long int _bitcol);
 unsigned int bmp_col_bit_count(unsigned long int col);
-
+unsigned int *bmp_row_counts();
+unsigned int *bmp_col_counts();
+unsigned int *bmp_col_buffer_offset(unsigned long int col, unsigned int **buffer, unsigned long int offset, unsigned long int height);
+unsigned int *bmp_col_counts_offset(unsigned long int _col_start, unsigned long int _col_end, unsigned long int _row_start, unsigned long int _row_end);
+unsigned int bmp_col_bit_count_offset(unsigned long int col, unsigned long int offset, unsigned long int length);
 /* --- PRINTF_BYTE_TO_BINARY macro's --- */
 #define PRINTF_BINARY_SEPARATOR
 #define PRINTF_BINARY_PATTERN_INT8 "%c%c%c%c%c%c%c%c "

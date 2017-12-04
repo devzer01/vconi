@@ -3,6 +3,7 @@
 //
 
 #include "bitmap.h"
+#include "stats.h"
 
 char *filename;
 
@@ -41,6 +42,16 @@ bmp_io_t test_data[3] =
 
         };
 
+
+void _load()
+{
+    if (filename != NULL) {
+        bmp_open(filename);
+    } else {
+        bmp_open("test-data/8x8-1.bmp");
+    }
+}
+
 void bmp_static_test()
 {
     unsigned long int data[4*3][2] = {
@@ -49,13 +60,10 @@ void bmp_static_test()
             {9, 0}, {96, 0}, {75, 0}, {39, 1},
     };
     for (int i = 0; i < 12; i++) {
-        printf("col %ld %ld int-idx %d char-idx %d - %#0x - %#0x \n",
+        printf("col %ld %ld int-idx %#0x - %#0x \n",
                data[i][0], data[i][1],
                __bmp_bit2intidx(data[i][0]),
-               __bmp_bit2charidx(data[i][0]),
-               __col2charmask(data[i][0]),
-               __col2intmask(data[i][0])
-        );
+               __bmp_col2mask(data[i][0]));
     }
 }
 
@@ -64,10 +72,10 @@ void bmp_position_test()
    if (filename != NULL) {
     bmp_open(filename);
    } else {
-    bmp_open("test-data/65x65-1.bmp");
+    bmp_open("test-data/8x8-1.bmp");
    }
 
-    printf("col2charmask(0) %#0x \n", __col2charmask(0));
+    printf("col2charmask(0) %#0x \n", __bmp_col2mask(0));
     unsigned int index = bmp_row_offset(0); // if negative then out of bound
     /*printf("offset 0:%d %#0x b:"
                    PRINTF_BINARY_PATTERN_INT32 "\n", index,
@@ -98,18 +106,54 @@ void bmp_position_test()
         c_col++;
         free(buffer);
     }
-    unsigned long int __row = 0, __col = 8;
+    unsigned long int __row = 3, __col = 8;
 
-    for(int i = 0; i < bmp_io->px.height; i++) {
+ /*   for(int i = 0; i < bmp_io->px.height; i++) {
         unsigned int mask = __col2intmask(i);
-        printf("%d " PRINTF_BINARY_PATTERN_INT32 "\n", i , PRINTF_BYTE_TO_BINARY_INT32(mask));
-    }
+        printf("%#2d " PRINTF_BINARY_PATTERN_INT32 "\n", i , PRINTF_BYTE_TO_BINARY_INT32(mask));
+    }*/
 
-    u_int32_t val = (u_int32_t) (ptrval(char_buffer,__row) & __col2intmask(__col));
+    /*unsigned int _offset = (col / 31);
+    unsigned long int _height = bmp_io->ints.height - 1;
+    while(_height <= 0) {
+
+        u_int32_t val = (u_int32_t) (ptrval(buffer,_offset) & __col2intmask(col));
+        bmp_io->col_px_count[col] += bmp_bcount32(val);
+        _height--;
+    }*/
+
+    u_int32_t val = (u_int32_t)(ptrval(char_buffer, __row) & __bmp_col2mask(__col));
     printf(PRINTF_BINARY_PATTERN_INT32 "\n"
                    PRINTF_BINARY_PATTERN_INT32 "\n"
-                   PRINTF_BINARY_PATTERN_INT32 "\n", PRINTF_BYTE_TO_BINARY_INT32(ptrval(char_buffer,__row)), PRINTF_BYTE_TO_BINARY_INT32(__col2intmask(__col)), PRINTF_BYTE_TO_BINARY_INT32(val));
+                   PRINTF_BINARY_PATTERN_INT32 "\n", PRINTF_BYTE_TO_BINARY_INT32(ptrval(char_buffer, __row)),
+           PRINTF_BYTE_TO_BINARY_INT32(__bmp_col2mask(__col)), PRINTF_BYTE_TO_BINARY_INT32(val));
 
+    /*for (int i = 0; i < bmp_io->px.width; i++) {
+        printf("col %d bit count %d \n", i, bmp_col_bit_count(i));
+    }
+*/
+    for(int r = 2; r < 4; r++) {
+        for (int i = 0; i < bmp_io->px.width; i++) {
+            char_buffer = bmp_col_buffer_offset(i, &char_buffer, r, 5);
+            unsigned int counter = bmp_col_bit_count_offset(i, r, 5);
+            printf("%d:bit " PRINTF_BINARY_PATTERN_INT32 " %d \n", i, PRINTF_BYTE_TO_BINARY_INT32(*char_buffer),
+                   counter);
+        }
+    }
+
+    unsigned int *buff = bmp_row_counts();
+    int i = 0;
+    while (i < bmp_io->px.height) {
+        printf("c:%d %d \n", i, *(buff+i));
+        i++;
+    }
+
+    unsigned int *cbuff = bmp_col_counts();
+     i = 0;
+    while (i < bmp_io->px.width) {
+        printf("c:%d %d \n", i, *(cbuff+i));
+        i++;
+    }
 
     /*printf("b:0 %#0x %#0x \n", bmp_io->bmp_data[index]+1, *buffer+1);
     printf("b:0 %#0x %#0x \n", bmp_io->bmp_data[index]+2, *buffer+2);*/
@@ -160,12 +204,97 @@ void bmp_test_init()
     }
 }
 
+void stat_unit_test_row_col()
+{
+    _load();
+
+    stat_row *root = stat_row_get();
+    stat_row *cell = root;
+    while (cell != NULL) {
+        printf("i: %d s: %ld :e %ld \n", cell->index, cell->gap.start, cell->gap.end);
+        (cell) = cell->next;
+    }
+
+    root = stat_col_get();
+    cell = root;
+    while (cell != NULL) {
+        printf("i: %d s: %ld :e %ld \n", cell->index, cell->gap.start, cell->gap.end);
+        (cell) = cell->next;
+    }
+}
+
+void stat_unit_test()
+{
+    _load();
+
+    stat_cell *root_cell = stat_cell_get();
+    stat_cell *cell = root_cell;
+    while(cell != NULL) {
+
+        printf(" [(%ld, %ld),(%ld, %ld)] , ", cell->row.start, cell->col.start, cell->row.end, cell->col.end);
+
+        if (cell->next != NULL && cell->row.start!= cell->next->row.start) {
+            printf("\n");
+        }
+
+        (cell) = cell->next;
+
+    }
+    printf("\n");
+}
+
+void cell_raw_test()
+{
+    _load();
+
+    stat_row *row_root = stat_row_get();
+    //stat_row *col_root = stat_col_get();
+    stat_row *_row = row_root;
+    //stat_row *_col = col_root;
+    while (_row != NULL) {
+        //printf("(%d) => [%ld,%ld] => ", _row->index, _row->gap.start, _row->gap.end);
+        stat_row *col_root = stat_col_get_offset(0, bmp_io->px.width, _row->gap.start, (_row->gap.end - _row->gap.start) + 1);
+        stat_row *_col = col_root;
+        while(_col != NULL) {
+            //printf("(%d) [%ld,%ld] ", _col->index, _col->gap.start, _col->gap.end);
+            printf(" [(%ld, %ld),(%ld, %ld)] , ", _row->gap.start, _col->gap.start, _row->gap.end, _col->gap.end);
+            (_col) = _col->next;
+        }
+        printf("\n");
+        (_row) = _row->next;
+    }
+}
+
+void bmp_offset_test()
+{
+    if (filename != NULL) {
+        bmp_open(filename);
+    } else {
+        bmp_open("test-data/8x8-1.bmp");
+    }
+    for (int i = 0; i < bmp_io->px.width; i++) {
+        printf("%d, 2, 1 %d \n", i, bmp_col_bit_count_offset(i, 0, 8));
+    }
+}
 
 int main(int argc, char **argv)
 {
-   filename = argv[1];
-    //bmp_test_init();
-    bmp_static_test();
-    bmp_position_test();
+    filename = argv[1];
+    char t_case = *argv[2];
+    switch (t_case) {
+        //bmp_test_init();
+        //bmp_static_test();
+        //bmp_position_test();
+        case 'r':
+            cell_raw_test();
+            break;
+        case 'o':
+            bmp_offset_test();
+            break;
+        default:
+            stat_unit_test();
+            break;
+    }
+
     return 0;
 }
