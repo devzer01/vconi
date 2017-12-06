@@ -17,8 +17,10 @@ typedef struct stat_point_t {
 } stat_point;
 
 typedef struct stat_cell_t {
+    int index;
     struct stat_gap_t row;
     struct stat_gap_t col;
+    unsigned long int **masked;
     struct stat_cell_t *next;
 } stat_cell;
 
@@ -33,5 +35,5 @@ struct stat_row_t *stat_col_get();
 struct stat_row_t *stat_gaps(unsigned int *buff, unsigned int start, unsigned int end);
 struct stat_row_t *stat_col_get_offset(unsigned long int col_start, unsigned long int col_end, unsigned long int row_start, unsigned long int height);
 struct stat_cell_t *stat_cell_get();
-
+struct stat_cell_t *stat_cell_get_filter();
 #endif //VCONI_STATS_H

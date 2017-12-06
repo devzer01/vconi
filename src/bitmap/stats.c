@@ -23,19 +23,64 @@ struct stat_row_t *stat_col_get_offset(unsigned long int col_start, unsigned lon
     return stat_gaps(buff, col_start, col_end);
 }
 
+unsigned int gap_same(struct stat_gap_t gapa, struct stat_gap_t gapb)
+{
+    if (gapa.start == gapb.start && gapa.end == gapb.end) return 1;
+    return 0;
+}
+
+
+struct stat_cell_t *stat_cell_get_filter()
+{
+    stat_cell *root_cell = stat_cell_get();
+    stat_cell *cell = root_cell;
+    while(cell != NULL) {
+        unsigned int _i = 0;
+        while (_i + cell->row.start < cell->row.end) {
+            unsigned int count = bmp_row_bit_count_partial((cell->row.start + _i), cell->col.start, cell->col.end);
+            if (count == 0 && cell->row.end != (_i + cell->row.start)) {
+                cell->row.end = (_i + cell->row.start) + 1;
+                break;
+            }
+            _i++;
+        }
+        if (cell->next != NULL && gap_same(cell->col, cell->next->col) == 1 && gap_same(cell->row, cell->next->row) == 1) {
+            (cell->next) = cell->next->next;
+        }
+        (cell) = cell->next;
+    }
+    return root_cell;
+}
+
 struct stat_cell_t *stat_cell_get()
 {
     stat_cell *cell_root = malloc(sizeof(struct stat_cell_t));
     stat_cell *_cell = cell_root;
     stat_row *row_root = stat_row_get();
     stat_row *_row = row_root;
-    while (_row != NULL) {
+    unsigned int index = 0;
+    while (_row != NULL && _row->index != -1) {
         stat_row *col_root = stat_col_get_offset(0, bmp_io->px.width, _row->gap.start, (_row->gap.end - _row->gap.start) + 1);
         stat_row *_col = col_root;
-        while(_col != NULL) {
+        while(_col != NULL && _col->index != -1) {
+            /*int _i = _row->gap.start, cumul = 0;
+            stat_gap _gap = {.start = _row->gap.start, .end = _row->gap.end };
+            while (_i < _row->gap.end) {
+                unsigned int count = bmp_row_bit_count_partial(_i, _col->gap.start, _col->gap.end);
+                if (cumul == 0 && count != 0) {
+                    _gap.start = _i;
+                } else if (cumul != 0 && count == 0) {
+                    _gap.end = _i;
+                }
+                cumul += count;
+                _i++;
+            }*/
+            //_cell->row = _gap;
             memcpy(&_cell->row, &_row->gap, sizeof(struct stat_gap_t));
             memcpy(&_cell->col, &_col->gap, sizeof(struct stat_gap_t));
+            _cell->index = ++index;
             _cell->next = malloc(sizeof(struct stat_cell_t));
+            _cell->next->index = -1;
             (_cell) = _cell->next;
             (_col) = _col->next;
         }
@@ -52,17 +97,13 @@ struct stat_row_t *stat_gaps(unsigned int *buff, unsigned int start, unsigned in
     int i = start;
     int gap_count = 0;
     while (i < end) {
-        if ((cell->index == -1 && *(buff+i) != 0) || ( i > 0 && *(buff+i-1) == 0 && *(buff+i) != 0)) {
+        if (cell->index == -1 && (*(buff+i) != 0)) {
             cell->gap.start = i;
+            cell->gap.end = end - 1;
             cell->index = gap_count;
             gap_count++;
-        }
-        if (i > 0 && (*(buff+i-1) != 0 && *(buff+i) == 0) || ((i == end - 1) && cell->index != -1)) {
-            if (i != end - 1) {
-                cell->gap.end = i - 1;
-            } else {
-                cell->gap.end = i;
-            }
+        } else if (cell->index != -1 && (*(buff+i) == 0)) {
+            cell->gap.end = i - 1;
             cell->next = malloc(sizeof(stat_row));
             cell->next->index = -1;
             (cell) = cell->next;

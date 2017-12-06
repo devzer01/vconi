@@ -98,10 +98,20 @@ void *bmp_init()
  */
 unsigned int __bmp_bit2intidx(unsigned long int _bitcol)
 {
-    if (_bitcol < 32) {
+    return __bmp_bit2idx(_bitcol, 32);
+}
+
+unsigned int __bmp_bit2CharIdx(unsigned long int _bitcol)
+{
+    return __bmp_bit2idx(_bitcol, 8);
+}
+
+unsigned int __bmp_bit2idx(unsigned long int _bitcol, unsigned int size)
+{
+    if (_bitcol < size) {
         return 0;
     }
-    return (_bitcol / 32);
+    return (_bitcol / size);
 }
 
 /**
@@ -171,27 +181,50 @@ unsigned int *bmp_col_buffer_offset(unsigned long int col, unsigned int **buffer
 unsigned char *bmp_matrix_get(struct stat_cell_t **cell)
 {
     unsigned long int height = ((*cell)->row.end - (*cell)->row.start) + 1;
-    unsigned long int _row = 0;
-    unsigned int **matrix = malloc(sizeof(unsigned int *) * height);
-    while (_row < height) {
-        unsigned int *buffer = malloc(sizeof(unsigned int) * bmp_io->ints.width);
-        buffer = bmp_row_buffer((*cell)->row.start + _row, &buffer, bmp_io->ints.width);
-        *(matrix + _row) = malloc(sizeof(unsigned int) * bmp_io->ints.width);
-        memcpy(*(matrix + _row), buffer, bmp_io->chars.width);
-        _row++;
-    }
-    _row = 0;
-    unsigned int column = __bmp_bit2intidx((*cell)->col.start);
+    unsigned long int _row = (*cell)->row.start;
     unsigned long int width = ((*cell)->col.end - (*cell)->col.start) + 1;
-    unsigned long int bwidth = width / 8;
-    unsigned char *charbuff = malloc(sizeof(unsigned char *) * bwidth * height);
-    while(_row < height) {
-        memcpy(charbuff+(bwidth*_row), ((*(matrix+_row))+column), bwidth);
-        //set end+byte boundary to 0
+    unsigned int column = __bmp_bit2CharIdx((*cell)->col.start);
+    unsigned int columnEnd = __bmp_bit2CharIdx((*cell)->col.end);
+    unsigned long int bWidth = (columnEnd - column + 1);
+    unsigned char *matrix = malloc(sizeof(unsigned char *) * height * bWidth);
+    unsigned long int __row = 0;
+    while (_row < (*cell)->row.end) {
+        unsigned int *buffer = malloc(sizeof(unsigned int) * bmp_io->ints.width);
+        unsigned char *cBuffer = (unsigned char *) bmp_row_buffer(_row, &buffer, bmp_io->ints.width);
+        memcpy((matrix + (__row * bWidth)), (cBuffer+column), bWidth);
+        _row++;
+        __row++;
+    }
+    return matrix;
+}
+
+unsigned char *bmp_matrix_get_filter(struct stat_cell_t **cell)
+{
+    unsigned long int height = ((*cell)->row.end - (*cell)->row.start) + 1;
+    unsigned long int _row = (*cell)->row.start;
+    unsigned long int width = ((*cell)->col.end - (*cell)->col.start) + 1;
+    unsigned int column = __bmp_bit2CharIdx((*cell)->col.start);
+    unsigned int columnEnd = __bmp_bit2CharIdx((*cell)->col.end);
+    unsigned long int bWidth = (columnEnd - column + 1);
+    unsigned char *matrix = malloc(sizeof(unsigned char *) * height * bWidth);
+    unsigned long int __row = 0;
+    while (_row < (*cell)->row.end) {
+        unsigned int *buffer = malloc(sizeof(unsigned int) * bmp_io->ints.width);
+        unsigned char *cBuffer = (unsigned char *) bmp_row_buffer(_row, &buffer, bmp_io->ints.width);
+        unsigned long int __col = column;
+        int skip = 0;
+        unsigned long int count = 0;
+        while(__col <= columnEnd) {
+            count += bmp_bcount32((uint32_t) *(cBuffer+column));
+            __col++;
+        }
+        if (count != 0) {
+            memcpy((matrix + (__row * bWidth)), (cBuffer+column), bWidth);
+            __row++;
+        }
         _row++;
     }
-
-    return charbuff;
+    return matrix;
 }
 
 /**
@@ -313,7 +346,99 @@ short bmp_is_row_empty(unsigned long int row)
     return (*(bmp_io->row_px_count + row) == 0);
 }
 
+unsigned long int **bmp_graph_buffer(unsigned char **buffer, unsigned long int width, unsigned long int height, unsigned long int start,
+                      unsigned long int end)
+{
+    unsigned long int _row = 0;
+    unsigned long int _col = 0;
+    int _start = __bmp_bit2CharIdx(start);
+    int _end = __bmp_bit2CharIdx(end);
+    unsigned long int bWidth = _end - _start + 1;
+    unsigned long int **maskValues = malloc(sizeof(unsigned long int *) * height);
+    while (_row < height) {
+        _col = start;
+        unsigned char *ptrCol = (unsigned char *) (*buffer+(_row*bWidth));
+        unsigned char mask = 0b10000000 >> (start % 8);
+        unsigned long int bCol = 0;
+        unsigned long int maskVal = 0;
+        unsigned long int iMask = 0x80000000;
+        while (bCol < bWidth) {
+            unsigned char cursor = *(ptrCol+bCol);
+            while (mask > 0 && _col < (start + width)) {
+                if ((mask & cursor) == mask) {
+                    maskVal += iMask;
+                }
+                mask = mask >> 1;
+                iMask = iMask >> 1;
+                _col++;
+            }
+            mask = 0x80;
+            bCol++;
+        }
+        *(maskValues+_row) = malloc(sizeof(unsigned long int));
+        *(*(maskValues+_row)) = maskVal;
+        _row++;
+    }
+    return maskValues;
+}
+
+void bmp_draw_buffer(unsigned char **buffer, unsigned long int width, unsigned long int height, unsigned long int start,
+                     unsigned long int end)
+{
+    unsigned long int _row = 0;
+    unsigned long int _col = 0;
+    int _start = __bmp_bit2CharIdx(start);
+    int _end = __bmp_bit2CharIdx(end);
+    unsigned long int bWidth = _end - _start + 1;
+
+    while (_row < height) {
+        _col = start;
+        unsigned char *ptrCol = (unsigned char *) (*buffer+(_row*bWidth));
+        unsigned char mask = 0b10000000 >> (start % 8);
+        unsigned long int bCol = 0;
+        unsigned char *tabs = " ";
+        //printf("starting mask %#0x width %d ", mask, width);
+        unsigned long int maskVal = 0;
+        unsigned long int iMask = 0x80000000;
+        printf("%20s", tabs);
+        while (bCol < bWidth) {
+            unsigned char cursor = *(ptrCol+bCol);
+            while (mask > 0 && _col < (start + width)) {
+                //printf("cursor %#0x ", cursor);
+                unsigned char _x = ((mask & cursor) == mask) ? '1' : '0';
+                if ((mask & cursor) == mask) {
+                    maskVal += iMask;
+                }
+                printf("%c", _x);
+                mask = mask >> 1;
+                iMask = iMask >> 1;
+                _col++;
+            }
+            mask = 0x80;
+            bCol++;
+        }
+        printf(" - %ld \n", maskVal);
+        _row++;
+    }
+}
 
 
 
-
+unsigned int bmp_row_bit_count_partial(unsigned long int row, unsigned long int col_start, unsigned long int col_end) {
+    unsigned long int int_start = __bmp_bit2intidx(col_start);
+    unsigned long int int_end = __bmp_bit2intidx(col_end);
+    unsigned long int iWidth = (int_end - int_start + 1);
+    unsigned int *buffer = malloc(sizeof(unsigned int) * bmp_io->ints.width);
+    buffer = bmp_row_buffer(row, &buffer, bmp_io->ints.width);
+    unsigned int *offset = (buffer+int_start);
+    unsigned int *offset_end = (buffer+int_end);
+    unsigned int *tbuff = malloc(sizeof(unsigned int) * iWidth);
+    memcpy(tbuff, offset, iWidth * 4);
+    unsigned long int index = 0;
+    unsigned long int counter = 0;
+    while (index < iWidth) {
+        counter += bmp_bcount32(*(tbuff+index));
+        index++;
+    }
+    return counter;
+}

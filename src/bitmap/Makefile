@@ -9,8 +9,9 @@ lib: bitmap.c bitmap.h
 
 
 test: lib bitmap_test.c
-	gcc -c $(GCC_FLAGS) -o test.o bitmap_test.c
-	gcc -o test $(GCC_FLAGS) bitmap.o test.o bitcount.o stats.o
+	gcc -c $(GCC_FLAGS) -o vconi.o ../vconi.c -I../map/
+	gcc -c $(GCC_FLAGS) -o test.o bitmap_test.c -I../ -I../map/
+	gcc -o test $(GCC_FLAGS) bitmap.o test.o bitcount.o stats.o vconi.o
 
 #bin: src/convert
 #	./bin/convert data/test/test.txt

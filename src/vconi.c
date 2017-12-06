@@ -74,7 +74,7 @@ unsigned char *getuchar(int32_t codepoint, unsigned char *buf)
 {
     range *ptr = (range *) malloc(sizeof(range));
     ptr = getcodeparams(codepoint, ptr);
-    buf = malloc(sizeof(unsigned char) * ptr->bsize);
+    //buf = malloc(sizeof(unsigned char) * ptr->bsize);
     int loop = ptr->bsize;
     while (0 <= --loop) {
         unsigned char ch = (ptr->mask & 0xff) + (codepoint & (ptr->ch & 0xff));

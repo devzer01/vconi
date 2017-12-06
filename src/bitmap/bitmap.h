@@ -142,7 +142,8 @@ unsigned int bmp_edge_mask(unsigned long int px_width);
 extern unsigned short bmp_bitcount(uint64_t group);
 extern unsigned short bmp_bcount32(uint32_t group);
 extern unsigned short bmp_flip(void *p1, void *p2);
-unsigned int __bmp_bit2charidx(unsigned long int _bitcol);
+unsigned int __bmp_bit2CharIdx(unsigned long int _bitcol);
+unsigned int __bmp_bit2idx(unsigned long int _bitcol, unsigned int size);
 unsigned int __bmp_col2mask(unsigned long int _bitcol);
 unsigned int bmp_col_bit_count(unsigned long int col);
 unsigned int *bmp_row_counts();
@@ -151,6 +152,11 @@ unsigned int *bmp_col_buffer_offset(unsigned long int col, unsigned int **buffer
 unsigned int *bmp_col_counts_offset(unsigned long int _col_start, unsigned long int _col_end, unsigned long int _row_start, unsigned long int _row_end);
 unsigned int bmp_col_bit_count_offset(unsigned long int col, unsigned long int offset, unsigned long int length);
 unsigned char *bmp_matrix_get(struct stat_cell_t **cell);
+unsigned char *bmp_matrix_get_filter(struct stat_cell_t **cell);
+void bmp_draw_buffer(unsigned char **buffer, unsigned long int width, unsigned long int height, unsigned long int start, unsigned long int end);
+unsigned int bmp_row_bit_count_partial(unsigned long int start, unsigned long int col_start, unsigned long int col_end);
+unsigned long int **bmp_graph_buffer(unsigned char **buffer, unsigned long int width, unsigned long int height, unsigned long int start,
+                                     unsigned long int end);
 /* --- PRINTF_BYTE_TO_BINARY macro's --- */
 #define PRINTF_BINARY_SEPARATOR
 #define PRINTF_BINARY_PATTERN_INT8 "%c%c%c%c%c%c%c%c "
