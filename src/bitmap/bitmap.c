@@ -178,6 +178,33 @@ unsigned int *bmp_col_buffer_offset(unsigned long int col, unsigned int **buffer
     return (*buffer);
 }
 
+unsigned char *bmp_char_matrix_get(struct stat_cell_t **cell)
+{
+    unsigned long int height = ((*cell)->row.end - (*cell)->row.start) + 1;
+    unsigned long int _row = 0, _col = 0;
+    unsigned long int width = ((*cell)->col.end - (*cell)->col.start) + 1;
+    unsigned int mask = __bmp_col2mask((*cell)->col.start);
+    unsigned char *matrix = malloc(sizeof(unsigned char *) * height * width);
+    unsigned char *ptrMatrix = matrix;
+    unsigned char *buffer = bmp_matrix_get(cell);
+    unsigned short charCounter = 0;
+    while (_row < height) {
+        while (_col < width) {
+            unsigned char cursor = *(buffer+charCounter);
+            while (mask > 0) {
+                *matrix = (unsigned char) (cursor & mask);
+                matrix++;
+                mask = mask >> 1;
+                _col++;
+            }
+            mask = 0x80;
+            charCounter++;
+        }
+        _row++;
+    }
+    return ptrMatrix;
+}
+
 unsigned char *bmp_matrix_get(struct stat_cell_t **cell)
 {
     unsigned long int height = ((*cell)->row.end - (*cell)->row.start) + 1;
@@ -382,6 +409,7 @@ unsigned long int **bmp_graph_buffer(unsigned char **buffer, unsigned long int w
     return maskValues;
 }
 
+
 void bmp_draw_buffer(unsigned char **buffer, unsigned long int width, unsigned long int height, unsigned long int start,
                      unsigned long int end)
 {
@@ -441,4 +469,56 @@ unsigned int bmp_row_bit_count_partial(unsigned long int row, unsigned long int 
         index++;
     }
     return counter;
+}
+
+shape bmp_normalize_shape_get(struct stat_cell_t **cell)
+{
+    unsigned char *buff = bmp_char_matrix_get(cell);
+    unsigned long int _row = 0, _col = 0, _height = ((*cell)->row.end - (*cell)->row.start + 1);
+    unsigned long int _width = ((*cell)->col.end - (*cell)->col.start + 1);
+    unsigned char matrix[MAX_SHAPE_HEIGHT][MAX_SHAPE_WIDTH] = {};
+    unsigned short int _x_factor = _width / MAX_SHAPE_WIDTH;
+    unsigned short int _y_factor = _height / MAX_SHAPE_HEIGHT;
+    unsigned short int _f = 0, _mcol = MAX_SHAPE_WIDTH - 1, _z = 0, _mrow = 0;
+    shape _shape; //_shape.buf[_row][_col];
+    unsigned short int _temp_buffer_length = MAX_SHAPE_WIDTH * _y_factor;
+    unsigned char *tbufer = malloc(sizeof(unsigned char) * _temp_buffer_length);
+    unsigned char *ptTbuffer = tbufer;
+    unsigned short int cursor = 0, dcursor = 0;
+
+    while (_row < _height) {
+        _col = 0;
+        while (_col < _width) {
+            unsigned short _avg = 0;
+            while (_f < _x_factor) {
+                _avg += *(buff + cursor + _f);
+                _f++;
+            }
+            *tbufer = _avg / _x_factor;
+            cursor += _x_factor;
+            dcursor++;
+            _f = 0;
+            tbufer++;
+            if (dcursor % _temp_buffer_length == 0) {
+                while(_z < MAX_SHAPE_WIDTH) {
+                    tbufer--;
+                    unsigned short _row_avg = 0;
+                    while (_f < _y_factor) {
+                        _row_avg += *(tbufer - (MAX_SHAPE_WIDTH * _f));
+                        _f++;
+                    }
+                    matrix[_mrow][_mcol] = (_row_avg  / _y_factor);
+                    _mcol--;
+                    _z++;
+                }
+                _mrow++;
+                if (tbufer == ptTbuffer + (MAX_SHAPE_WIDTH * _y_factor)) {
+                    tbufer = ptTbuffer;
+                    printf("reset successful");
+                }
+            }
+            _col += _x_factor;
+        }
+        _row++;
+    }
 }

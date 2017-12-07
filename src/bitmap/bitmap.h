@@ -11,7 +11,10 @@
 #define CODE_BITMAP_H
 
 #define PX_FIRST 0x80000000
-#define PX_LAST 
+#define PX_LAST
+
+#define MAX_SHAPE_WIDTH 16
+#define MAX_SHAPE_HEIGHT 16
 
 typedef unsigned short WORD;
 typedef unsigned int DWORD;
@@ -116,6 +119,11 @@ typedef struct bmp_io_t {
 } bmp_io_t, *ptr_bmp_io;
 ptr_bmp_io bmp_io;
 
+typedef struct shape_t {
+    unsigned char buf[MAX_SHAPE_HEIGHT][MAX_SHAPE_WIDTH];
+    unsigned short mask[MAX_SHAPE_HEIGHT];
+} shape, *ptr_shape;
+
 unsigned int *bmp_row_addr(unsigned long int row);
 struct ocr_row *ocr_row_root; // = malloc(sizeof(struct ocr_row));
 struct ocr_row *or_root; // = ocr_row_root;
@@ -152,7 +160,9 @@ unsigned int *bmp_col_buffer_offset(unsigned long int col, unsigned int **buffer
 unsigned int *bmp_col_counts_offset(unsigned long int _col_start, unsigned long int _col_end, unsigned long int _row_start, unsigned long int _row_end);
 unsigned int bmp_col_bit_count_offset(unsigned long int col, unsigned long int offset, unsigned long int length);
 unsigned char *bmp_matrix_get(struct stat_cell_t **cell);
+unsigned char *bmp_char_matrix_get(struct stat_cell_t **cell);
 unsigned char *bmp_matrix_get_filter(struct stat_cell_t **cell);
+shape bmp_normalize_matrix(unsigned char *buffer, struct stat_cell_t **cell); //TODO: pass cell
 void bmp_draw_buffer(unsigned char **buffer, unsigned long int width, unsigned long int height, unsigned long int start, unsigned long int end);
 unsigned int bmp_row_bit_count_partial(unsigned long int start, unsigned long int col_start, unsigned long int col_end);
 unsigned long int **bmp_graph_buffer(unsigned char **buffer, unsigned long int width, unsigned long int height, unsigned long int start,
