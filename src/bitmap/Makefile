@@ -14,8 +14,8 @@ test: lib bitmap_test.c
 	gcc -o test $(GCC_FLAGS) bitmap.o test.o bitcount.o stats.o vconi.o
 
 debug: test
-	#gdb -ex 'break bitmap.c:195' -ex 'dump buffer' -ex 'r' --args ./test test-data/256x256-1.bmp x
-	gdb -ex 'break bmp_char_matrix_get if (cell->col.start == 8)' -ex 'break __bmp_col2mask' -ex 'r' --args ./test test-data/8x8-1.bmp x
+	gdb -ex 'b bmp_normalize_shape_get' -ex 'r' --args ./test test-data/256x256-1.bmp x
+	#gdb -ex 'break bmp_char_matrix_get if (cell->col.start == 8)' -ex 'break __bmp_col2mask' -ex 'r' --args ./test test-data/8x8-1.bmp x
 
 #bin: src/convert
 #	./bin/convert data/test/test.txt

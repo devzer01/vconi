@@ -219,7 +219,7 @@ unsigned char *bmp_char_matrix_get(struct stat_cell_t *cell)
             unsigned char cursor = *(buffer+charCounter);
             while (mask > 0 && _col < width) {
                 if (mask == (cursor & mask) && mask > 0) {
-                    *matrix = (cursor & mask);
+                    *matrix = '1'; //(cursor & mask);
                 } else {
                     *matrix = '0';
                 }
@@ -571,7 +571,8 @@ shape bmp_normalize_shape_get(struct stat_cell_t *cell)
         while (_col < _width) {
             float _avg = 0.0L;
             while (_f < _x_factor) {
-                if (*(buff + cursor + _f) > 0) {
+                printf("%c", *(buff + cursor + _f));
+                if (*(buff + cursor + _f) == '1') {
                     _avg++;
                 }
                 _f++;
@@ -612,6 +613,7 @@ shape bmp_normalize_shape_get(struct stat_cell_t *cell)
             _col += _x_factor;
         }
         _row++;
+        printf("\n");
     }
     if (ptTbuffer != NULL)free(ptTbuffer);
     if (buff != NULL) free(buff);
