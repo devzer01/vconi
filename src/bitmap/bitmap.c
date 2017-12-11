@@ -123,9 +123,22 @@ unsigned int __bmp_col2mask(unsigned long int _bitcol)
 {
     unsigned int offset = (_bitcol / 8) + 1; //because we are zero based
     unsigned int index =  (_bitcol % 8) + 1; //because we are zero based
-    unsigned int needle = 0x01 << ((offset * 8) - index);
+    short shift_counter = ((offset * 8) - index);
+    unsigned int needle = 0x01 << shift_counter;
    // unsigned int needle = 0x80 << ((offset * 8) - index);
     //needle = needle >> index;
+    return  needle;
+}
+
+/**
+ *
+ * @param _bitcol
+ * @return
+ */
+unsigned char __bmp_col2mask_char(unsigned long int _bitcol)
+{
+    unsigned int offset = (_bitcol % 8); //because we are zero based
+    unsigned char needle = 0x80 >> offset;
     return  needle;
 }
 
@@ -190,7 +203,7 @@ unsigned char *bmp_char_matrix_get(struct stat_cell_t *cell)
     unsigned long int height = (cell->row.end - cell->row.start) + 1;
     unsigned long int _row = 0, _col = 0;
     unsigned long int width = (cell->col.end - cell->col.start) + 1;
-    unsigned int mask = __bmp_col2mask(cell->col.start);
+    unsigned char mask = __bmp_col2mask_char(cell->col.start);
 
     if (height * width == 0) {
         printf("heign witdth 0 \n");
@@ -217,7 +230,7 @@ unsigned char *bmp_char_matrix_get(struct stat_cell_t *cell)
             mask = 0x80;
             charCounter++;
         }
-        mask = __bmp_col2mask(cell->col.start);
+        mask = __bmp_col2mask_char(cell->col.start);
         _row++;
     }
     free(buffer);
@@ -235,9 +248,21 @@ unsigned char *bmp_matrix_get(struct stat_cell_t *cell)
     unsigned char *matrix = malloc(sizeof(unsigned char *) * height * bWidth);
     unsigned long int __row = 0;
     while (_row <= cell->row.end) {
-        unsigned char *buffer = malloc(sizeof(unsigned int) * bmp_io->ints.width);
-        unsigned char *cBuffer = (unsigned char *) bmp_row_char_buffer(_row, &buffer, bmp_io->ints.width);
-        memcpy((matrix + (__row * bWidth)), (cBuffer+column), bWidth);
+        unsigned int *buffer = malloc(sizeof(unsigned int) * bmp_io->ints.width);
+        unsigned char *charBuffer = malloc(sizeof(unsigned char) * (bmp_io->ints.width * 4));
+        unsigned char *ptr = charBuffer;
+        short irow = 0;
+        buffer = bmp_row_buffer(_row, &buffer, bmp_io->ints.width);
+        while (irow < bmp_io->ints.width) {
+            (*(charBuffer+3)) = (*buffer >> 24) & 0xFF;
+            (*(charBuffer+2)) = (*buffer >> 16) & 0xFF;
+            (*(charBuffer+1)) = (*buffer >> 8) & 0xFF;
+            (*(charBuffer)) = *buffer & 0xFF;
+            charBuffer += 4;
+            buffer++;
+            irow++;
+        }
+        memcpy((matrix + (__row * bWidth)), (ptr+column), bWidth);
         _row++;
         __row++;
     }
