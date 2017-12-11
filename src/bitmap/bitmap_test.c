@@ -234,8 +234,7 @@ int32_t codepoints[] = {
                   3482, 3461, 3482, 3461, 3482, 3461, 3482, 3461, 3482, 3461, 3482, 3461
 };
 
-bmp_io_t test_data[3] =
-        {
+bmp_io_t test_data[3] = {
                 {
                         .filename = "test-data/8x8-1.bmp",
                         .bit_per_px = 1,
@@ -467,7 +466,7 @@ void stat_unit_test_filter() {
         sprintf(cell_header, "[(%ld, %ld),(%ld, %ld)] =>", cell->row.start, cell->col.start, cell->row.end,
                 cell->col.end);
         printf("%18s\n", cell_header);
-        unsigned char *buffer = bmp_matrix_get(&cell);
+        unsigned char *buffer = bmp_matrix_get(cell);
         unsigned long int width = (cell->col.end - cell->col.start);
         unsigned long int height = (cell->row.end - cell->row.start);
         bmp_draw_buffer(&buffer, width, height, cell->col.start, cell->col.end);
@@ -608,6 +607,50 @@ unsigned int identify_cell(stat_cell *cell)
 
 }
 
+void normalize_test()
+{
+    _load();
+    stat_cell *root_cell = stat_cell_get();
+    stat_cell *cell = root_cell;
+
+    while (cell != NULL && cell->index != -1) {
+
+        unsigned char *cell_header = malloc(sizeof(unsigned char) * 30);
+        printf("[(%ld, %ld),(%ld, %ld)] => \n", cell->row.start, cell->col.start, cell->row.end,
+                cell->col.end);
+        unsigned char *buff = bmp_char_matrix_get(cell);
+        unsigned long int width = (cell->col.end - cell->col.start) + 1;
+        unsigned long int height = (cell->row.end - cell->row.start) + 1;
+        bmp_print_matrix(buff, width, height);
+        //bmp_draw_buffer(&buffer, width, height, cell->col.start, cell->col.end);
+        //bmp_draw_buffer(&buffer, width, height, cell->col.start, cell->col.end);
+        //printf("-----\n");
+        //shape shape1 = bmp_normalize_shape_get(cell); //TODO: pass cell
+        //bmp_print_shape(shape1);
+        unsigned long int _row = 0;
+        unsigned long int match = 0;
+        printf("\n\n\n");
+        /*if (identify_cell(cell) != 0) {
+            //bmp_draw_buffer(&buffer, width, height, cell->col.start, cell->col.end);
+        } else {
+
+        }*/
+        //printf("buff %#9x", *buffer);
+        if (cell->next != NULL && cell->row.start != cell->next->row.start) {
+            printf("\n");
+        }
+        stat_cell *pcell = (cell);
+        (cell) = cell->next;
+        free(pcell);
+    }
+    free(root_cell);
+    free(cell);
+    //printf("\n");
+    free(bmp_io);
+
+
+}
+
 void find_box_test() {
     _load();
 
@@ -618,18 +661,14 @@ void find_box_test() {
         unsigned char *cell_header = malloc(sizeof(unsigned char) * 30);
         sprintf(cell_header, "[(%ld, %ld),(%ld, %ld)] =>", cell->row.start, cell->col.start, cell->row.end,
                 cell->col.end);
-        unsigned char *buffer = bmp_matrix_get(&cell);
+        unsigned char *buffer = bmp_matrix_get(cell);
         unsigned long int width = (cell->col.end - cell->col.start) + 1;
         unsigned long int height = (cell->row.end - cell->row.start) + 1;
         //bmp_draw_buffer(&buffer, width, height, cell->col.start, cell->col.end);
-        cell->masked = bmp_graph_buffer(&buffer, width, height, cell->col.start, cell->col.end); //TODO: pass cell
+       // cell->masked = bmp_normalize_shape_get(&cell); //TODO: pass cell
         unsigned long int _row = 0;
         unsigned long int match = 0;
-        if (identify_cell(cell) != 0) {
-            //bmp_draw_buffer(&buffer, width, height, cell->col.start, cell->col.end);
-        } else {
-            bmp_draw_buffer(&buffer, width, height, cell->col.start, cell->col.end);
-        }
+
         //printf("buff %#9x", *buffer);
         if (cell->next != NULL && cell->row.start != cell->next->row.start) {
             printf("\n");
@@ -655,7 +694,7 @@ void stat_unit_test() {
         sprintf(cell_header, "[(%ld, %ld),(%ld, %ld)] =>", cell->row.start, cell->col.start, cell->row.end,
                 cell->col.end);
         printf("%18s\n", cell_header);
-        unsigned char *buffer = bmp_matrix_get(&cell);
+        unsigned char *buffer = bmp_matrix_get(cell);
         unsigned long int width = (cell->col.end - cell->col.start) + 1;
         unsigned long int height = (cell->row.end - cell->row.start) + 1;
         bmp_draw_buffer(&buffer, width, height, cell->col.start, cell->col.end);
@@ -727,7 +766,8 @@ int main(int argc, char **argv) {
         default:
             //stat_unit_test_filter();
             //stat_unit_test();
-            find_box_test();
+            //find_box_test();
+            normalize_test();
             break;
     }
 

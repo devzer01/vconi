@@ -154,6 +154,13 @@ unsigned int *bmp_row_buffer(unsigned long int row, unsigned int **buffer, unsig
     return *buffer;
 }
 
+unsigned char *bmp_row_char_buffer(unsigned long int row, unsigned char **buffer, unsigned long int width)
+{
+    *buffer = (unsigned char *) malloc(sizeof(unsigned int) * width);
+    memcpy(*buffer, (unsigned char *) &bmp_io->bmp_data[bmp_row_offset(row)], sizeof(unsigned int) * width);
+    return *buffer;
+}
+
 /**
  *
  * @param col
@@ -178,21 +185,31 @@ unsigned int *bmp_col_buffer_offset(unsigned long int col, unsigned int **buffer
     return (*buffer);
 }
 
-unsigned char *bmp_char_matrix_get(struct stat_cell_t **cell)
+unsigned char *bmp_char_matrix_get(struct stat_cell_t *cell)
 {
-    unsigned long int height = ((*cell)->row.end - (*cell)->row.start) + 1;
+    unsigned long int height = (cell->row.end - cell->row.start) + 1;
     unsigned long int _row = 0, _col = 0;
-    unsigned long int width = ((*cell)->col.end - (*cell)->col.start) + 1;
-    unsigned int mask = __bmp_col2mask((*cell)->col.start);
+    unsigned long int width = (cell->col.end - cell->col.start) + 1;
+    unsigned int mask = __bmp_col2mask(cell->col.start);
+
+    if (height * width == 0) {
+        printf("heign witdth 0 \n");
+        return NULL;
+    }
     unsigned char *matrix = malloc(sizeof(unsigned char *) * height * width);
     unsigned char *ptrMatrix = matrix;
     unsigned char *buffer = bmp_matrix_get(cell);
     unsigned short charCounter = 0;
     while (_row < height) {
+        _col = 0;
         while (_col < width) {
             unsigned char cursor = *(buffer+charCounter);
-            while (mask > 0) {
-                *matrix = (unsigned char) (cursor & mask);
+            while (mask > 0 && _col < width) {
+                if (mask == (cursor & mask) && mask > 0) {
+                    *matrix = (cursor & mask);
+                } else {
+                    *matrix = '0';
+                }
                 matrix++;
                 mask = mask >> 1;
                 _col++;
@@ -200,24 +217,26 @@ unsigned char *bmp_char_matrix_get(struct stat_cell_t **cell)
             mask = 0x80;
             charCounter++;
         }
+        mask = __bmp_col2mask(cell->col.start);
         _row++;
     }
+    free(buffer);
     return ptrMatrix;
 }
 
-unsigned char *bmp_matrix_get(struct stat_cell_t **cell)
+unsigned char *bmp_matrix_get(struct stat_cell_t *cell)
 {
-    unsigned long int height = ((*cell)->row.end - (*cell)->row.start) + 1;
-    unsigned long int _row = (*cell)->row.start;
-    unsigned long int width = ((*cell)->col.end - (*cell)->col.start) + 1;
-    unsigned int column = __bmp_bit2CharIdx((*cell)->col.start);
-    unsigned int columnEnd = __bmp_bit2CharIdx((*cell)->col.end);
+    unsigned long int height = cell->row.end - cell->row.start + 1;
+    unsigned long int _row = cell->row.start;
+    unsigned long int width = (cell->col.end - cell->col.start) + 1;
+    unsigned int column = __bmp_bit2CharIdx(cell->col.start);
+    unsigned int columnEnd = __bmp_bit2CharIdx(cell->col.end);
     unsigned long int bWidth = (columnEnd - column + 1);
     unsigned char *matrix = malloc(sizeof(unsigned char *) * height * bWidth);
     unsigned long int __row = 0;
-    while (_row < (*cell)->row.end) {
-        unsigned int *buffer = malloc(sizeof(unsigned int) * bmp_io->ints.width);
-        unsigned char *cBuffer = (unsigned char *) bmp_row_buffer(_row, &buffer, bmp_io->ints.width);
+    while (_row <= cell->row.end) {
+        unsigned char *buffer = malloc(sizeof(unsigned int) * bmp_io->ints.width);
+        unsigned char *cBuffer = (unsigned char *) bmp_row_char_buffer(_row, &buffer, bmp_io->ints.width);
         memcpy((matrix + (__row * bWidth)), (cBuffer+column), bWidth);
         _row++;
         __row++;
@@ -471,17 +490,53 @@ unsigned int bmp_row_bit_count_partial(unsigned long int row, unsigned long int 
     return counter;
 }
 
-shape bmp_normalize_shape_get(struct stat_cell_t **cell)
+void bmp_print_matrix(unsigned char *buffer, short width, short height)
+{
+    for (short _row = 0; _row < height; _row++) {
+        for (short _col = 0; _col < width; _col++) {
+            if ((*(buffer+(_row*width)+_col)) != '0') {
+                printf("1");
+            } else {
+                printf("0");
+            }
+            //printf("%#x", shape1.buf[_row][_col]);
+        }
+        printf("\n");
+    }
+}
+
+void bmp_print_shape(shape shape1)
+{
+    for (short _row = 0; _row < MAX_SHAPE_HEIGHT; _row++) {
+        for (short _col = 0; _col < MAX_SHAPE_WIDTH; _col++) {
+            if (shape1.buf[_row][_col] != 0) {
+                printf("1");
+            } else {
+                printf("0");
+            }
+            //printf("%#x", shape1.buf[_row][_col]);
+        }
+        printf("\n");
+    }
+}
+
+shape bmp_normalize_shape_get(struct stat_cell_t *cell)
 {
     unsigned char *buff = bmp_char_matrix_get(cell);
-    unsigned long int _row = 0, _col = 0, _height = ((*cell)->row.end - (*cell)->row.start + 1);
-    unsigned long int _width = ((*cell)->col.end - (*cell)->col.start + 1);
-    unsigned char matrix[MAX_SHAPE_HEIGHT][MAX_SHAPE_WIDTH] = {};
-    unsigned short int _x_factor = _width / MAX_SHAPE_WIDTH;
-    unsigned short int _y_factor = _height / MAX_SHAPE_HEIGHT;
+    unsigned long int _row = 0, _col = 0, _height = (cell->row.end - cell->row.start + 1);
+    unsigned long int _width = (cell->col.end - cell->col.start + 1);
+    shape matrix;
+    //unsigned char matrix[MAX_SHAPE_HEIGHT][MAX_SHAPE_WIDTH] = {};
+    float _x_factor = _width / MAX_SHAPE_WIDTH;
+    float _y_factor = _height / MAX_SHAPE_HEIGHT;
     unsigned short int _f = 0, _mcol = MAX_SHAPE_WIDTH - 1, _z = 0, _mrow = 0;
     shape _shape; //_shape.buf[_row][_col];
     unsigned short int _temp_buffer_length = MAX_SHAPE_WIDTH * _y_factor;
+    if (_temp_buffer_length  == 0 || _x_factor == 0 || _y_factor == 0) {
+        printf("too small \n");
+        memcpy(&matrix.buf, buff, sizeof(unsigned char) * _width * _height);
+        return matrix;
+    }
     unsigned char *tbufer = malloc(sizeof(unsigned char) * _temp_buffer_length);
     unsigned char *ptTbuffer = tbufer;
     unsigned short int cursor = 0, dcursor = 0;
@@ -489,36 +544,51 @@ shape bmp_normalize_shape_get(struct stat_cell_t **cell)
     while (_row < _height) {
         _col = 0;
         while (_col < _width) {
-            unsigned short _avg = 0;
+            float _avg = 0.0L;
             while (_f < _x_factor) {
-                _avg += *(buff + cursor + _f);
+                if (*(buff + cursor + _f) > 0) {
+                    _avg++;
+                }
                 _f++;
             }
             *tbufer = _avg / _x_factor;
             cursor += _x_factor;
             dcursor++;
             _f = 0;
-            tbufer++;
+
             if (dcursor % _temp_buffer_length == 0) {
                 while(_z < MAX_SHAPE_WIDTH) {
-                    tbufer--;
+                    //tbufer--;
                     unsigned short _row_avg = 0;
                     while (_f < _y_factor) {
                         _row_avg += *(tbufer - (MAX_SHAPE_WIDTH * _f));
                         _f++;
                     }
-                    matrix[_mrow][_mcol] = (_row_avg  / _y_factor);
+                    if ((_row_avg / _y_factor) >= (_y_factor * _x_factor) / 2) {
+                        _row_avg = 0x01;
+                    } else _row_avg = 0x00;
+                    matrix.buf[_mrow][_mcol] = _row_avg; //  / _y_factor);
                     _mcol--;
                     _z++;
+                    tbufer--;
                 }
                 _mrow++;
-                if (tbufer == ptTbuffer + (MAX_SHAPE_WIDTH * _y_factor)) {
+                //if (tbufer == ptTbuffer + (MAX_SHAPE_WIDTH * _y_factor)) {
                     tbufer = ptTbuffer;
-                    printf("reset successful");
-                }
+                    //printf("reset successful");
+                //} else {
+                //    printf("we are over buffer");
+                //}
+            } else {
+                tbufer++;
+
             }
+            //printf(" %ld ", tbufer - ptTbuffer);
             _col += _x_factor;
         }
         _row++;
     }
+    if (ptTbuffer != NULL)free(ptTbuffer);
+    if (buff != NULL) free(buff);
+    return matrix;
 }
