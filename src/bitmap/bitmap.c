@@ -552,8 +552,8 @@ shape bmp_normalize_shape_get(struct stat_cell_t *cell)
     unsigned long int _width = (cell->col.end - cell->col.start + 1);
     shape matrix;
     //unsigned char matrix[MAX_SHAPE_HEIGHT][MAX_SHAPE_WIDTH] = {};
-    float _x_factor = _width / MAX_SHAPE_WIDTH;
-    float _y_factor = _height / MAX_SHAPE_HEIGHT;
+    int _x_factor = (_width / MAX_SHAPE_WIDTH) + 1;
+    int _y_factor = _height / MAX_SHAPE_HEIGHT;
     unsigned short int _f = 0, _mcol = MAX_SHAPE_WIDTH - 1, _z = 0, _mrow = 0;
     shape _shape; //_shape.buf[_row][_col];
     unsigned short int _temp_buffer_length = MAX_SHAPE_WIDTH * _y_factor;
@@ -562,60 +562,83 @@ shape bmp_normalize_shape_get(struct stat_cell_t *cell)
         memcpy(&matrix.buf, buff, sizeof(unsigned char) * _width * _height);
         return matrix;
     }
-    unsigned char *tbufer = malloc(sizeof(unsigned char) * _temp_buffer_length);
-    unsigned char *ptTbuffer = tbufer;
+    short _tx_row = 0;
+    //char (*tbufer)[MAX_SHAPE_WIDTH];
+    char tbufer[2][MAX_SHAPE_WIDTH] = {};
+    //char **ptTbuffer = tbufer;
     unsigned short int cursor = 0, dcursor = 0;
-
+    short _trow = 0;
+    short _tcol = 0;
+    short _max_col = 0;
+    printf("x %d y %d w %d\n", _x_factor, _y_factor, _width);
+    //_x_factor = 3;
     while (_row < _height) {
         _col = 0;
+        _tcol = 0;
+        _trow++;
+        if (_trow >= _y_factor) _trow = 0;
         while (_col < _width) {
             float _avg = 0.0L;
+            if (_tcol > _max_col) _max_col = _tcol;
             while (_f < _x_factor) {
-                printf("%c", *(buff + cursor + _f));
-                if (*(buff + cursor + _f) == '1') {
+                //printf(".%d.", cursor);
+                if (*(buff + cursor) == '1') {
                     _avg++;
                 }
+                cursor++;
                 _f++;
             }
-            *tbufer = _avg / _x_factor;
-            cursor += _x_factor;
+            //printf(".%d.", _tcol);
+            tbufer[_trow][_tcol] = '0';
+            //printf("avg %f ..", _avg);
+            if (_avg > 1.4) {
+                tbufer[_trow][_tcol] = '1';
+            }
+            _col += _x_factor;
+            _tcol++;
             dcursor++;
             _f = 0;
 
             if (dcursor % _temp_buffer_length == 0) {
-                while(_z < MAX_SHAPE_WIDTH) {
-                    //tbufer--;
-                    unsigned short _row_avg = 0;
+                _mcol = 0;
+                _z = 0;
+                short _a = 0;
+                while (_a < _y_factor) {
+                    _z = 0;
+                    while (_z <= _max_col) {
+                        //printf("%c", tbufer[_a][_z]);
+                        _z++;
+                    }
+                    //printf("\n");
+                    _a++;
+                }
+                //printf("------\n");
+                _z = 0;
+                while(_z <= _max_col) {
+
+                    _f = 0;
+                    short _n = 0;
                     while (_f < _y_factor) {
-                        _row_avg += *(tbufer - (MAX_SHAPE_WIDTH * _f));
+                        if (tbufer[_f][_mcol] == '1') _n++;
                         _f++;
                     }
-                    if ((_row_avg / _y_factor) >= (_y_factor * _x_factor) / 2) {
-                        _row_avg = 0x01;
-                    } else _row_avg = 0x00;
-                    matrix.buf[_mrow][_mcol] = _row_avg; //  / _y_factor);
-                    _mcol--;
+                    matrix.buf[_mrow][_mcol] = '0';
+                    if ((_n / _y_factor) > 0.0) {
+                        printf("1");
+                        matrix.buf[_mrow][_mcol] = '1';
+                    } else {
+                        printf("0");
+                    }
+                    _mcol++;
                     _z++;
-                    tbufer--;
                 }
                 _mrow++;
-                //if (tbufer == ptTbuffer + (MAX_SHAPE_WIDTH * _y_factor)) {
-                    tbufer = ptTbuffer;
-                    //printf("reset successful");
-                //} else {
-                //    printf("we are over buffer");
-                //}
-            } else {
-                tbufer++;
-
             }
-            //printf(" %ld ", tbufer - ptTbuffer);
-            _col += _x_factor;
         }
+        _tx_row++;
         _row++;
         printf("\n");
     }
-    if (ptTbuffer != NULL)free(ptTbuffer);
     if (buff != NULL) free(buff);
     return matrix;
 }
