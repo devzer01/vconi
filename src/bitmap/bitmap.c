@@ -534,7 +534,8 @@ void bmp_print_shape(shape shape1)
 {
     for (short _row = 0; _row < MAX_SHAPE_HEIGHT; _row++) {
         for (short _col = 0; _col < MAX_SHAPE_WIDTH; _col++) {
-            if (shape1.buf[_row][_col] != 0) {
+            if (shape1.buf[_row][_col] != '0' && shape1.buf[_row][_col] != '1') continue;
+            if (shape1.buf[_row][_col] != '0') {
                 printf("1");
             } else {
                 printf("0");
@@ -564,7 +565,7 @@ shape bmp_normalize_shape_get(struct stat_cell_t *cell)
     }
     short _tx_row = 0;
     //char (*tbufer)[MAX_SHAPE_WIDTH];
-    char tbufer[2][MAX_SHAPE_WIDTH] = {};
+    char tbufer[3][MAX_SHAPE_WIDTH] = {};
     //char **ptTbuffer = tbufer;
     unsigned short int cursor = 0, dcursor = 0;
     short _trow = 0;
@@ -591,7 +592,7 @@ shape bmp_normalize_shape_get(struct stat_cell_t *cell)
             //printf(".%d.", _tcol);
             tbufer[_trow][_tcol] = '0';
             //printf("avg %f ..", _avg);
-            if (_avg > 1.4) {
+            if (_avg / _x_factor > _x_factor / 2 ) {
                 tbufer[_trow][_tcol] = '1';
             }
             _col += _x_factor;
@@ -615,29 +616,30 @@ shape bmp_normalize_shape_get(struct stat_cell_t *cell)
                 //printf("------\n");
                 _z = 0;
                 while(_z <= _max_col) {
-
                     _f = 0;
                     short _n = 0;
                     while (_f < _y_factor) {
                         if (tbufer[_f][_mcol] == '1') _n++;
                         _f++;
                     }
-                    matrix.buf[_mrow][_mcol] = '0';
+                    matrix.buf[_mrow][_mcol] = '3';
                     if ((_n / _y_factor) > 0.0) {
-                        printf("1");
+                        //printf("1");
                         matrix.buf[_mrow][_mcol] = '1';
                     } else {
-                        printf("0");
+                        //printf("0");
+                        matrix.buf[_mrow][_mcol] = '0';
                     }
                     _mcol++;
                     _z++;
                 }
+               // printf("\n");
                 _mrow++;
             }
         }
+        cursor = (_row * _width);
         _tx_row++;
         _row++;
-        printf("\n");
     }
     if (buff != NULL) free(buff);
     return matrix;
