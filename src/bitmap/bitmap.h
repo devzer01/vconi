@@ -120,10 +120,10 @@ typedef struct bmp_io_t {
 ptr_bmp_io bmp_io;
 
 typedef struct shape_t {
-    char buf[MAX_SHAPE_HEIGHT][MAX_SHAPE_WIDTH];
+    unsigned short buf[MAX_SHAPE_HEIGHT][MAX_SHAPE_WIDTH];
     unsigned short mask[MAX_SHAPE_HEIGHT];
 } shape, *ptr_shape;
-
+shape bmp_normalize_shape_trim(struct stat_cell_t *cell);
 unsigned int *bmp_row_addr(unsigned long int row);
 struct ocr_row *ocr_row_root; // = malloc(sizeof(struct ocr_row));
 struct ocr_row *or_root; // = ocr_row_root;

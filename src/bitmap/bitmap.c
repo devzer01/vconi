@@ -580,10 +580,44 @@ void bmp_print_shape(shape shape1)
 {
     for (short _row = 0; _row < MAX_SHAPE_HEIGHT; _row++) {
         for (short _col = 0; _col < MAX_SHAPE_WIDTH; _col++) {
-           printf("%c", shape1.buf[_row][_col]);
+           printf(" %#2d ", shape1.buf[_row][_col]);
         }
         printf("\n");
     }
+}
+
+shape bmp_normalize_shape_trim(struct stat_cell_t *cell)
+{
+    unsigned char **d2matrix = bmp_char_matrix_get_2d(cell);
+    unsigned long int height = (cell->row.end - cell->row.start);
+    unsigned long int _row = 0, _col = 0, __row = 0, __col = 0;
+    unsigned long int width = (cell->col.end - cell->col.start);
+
+    shape mx;
+    short foundTop = 0, foundBottom = 0, accumulatedRows = 0;
+    while (_row < height) {
+        short pixelcount = 0;
+        _col = 0;
+        while(_col < width) {
+            char cursor = *(*(d2matrix+_row)+_col);
+            if (cursor == '1') pixelcount++;
+            _col++;
+        }
+        if (pixelcount == 0 && foundTop == 0) {
+            cell->row.start++;
+        } else if (pixelcount != 0 && foundTop == 0) {
+            foundTop = 1;
+        }
+        if (foundTop == 1 && foundBottom == 0 && pixelcount == 0) {
+            cell->row.end = cell->row.start + accumulatedRows;
+            foundBottom = 1;
+        }
+        if (pixelcount != 0) accumulatedRows++;
+        _row++;
+    }
+
+    mx = bmp_normalize_shape_get(cell);
+    return mx;
 }
 
 shape bmp_normalize_shape_get(struct stat_cell_t *cell)
@@ -639,20 +673,21 @@ shape bmp_normalize_shape_get(struct stat_cell_t *cell)
                    // printf("[%d,%d %c]", j, i, cursor);
                     //double pc = (double) dx * fi2;
                     if (cursor == '1') {
-                        avg += 0xFF * fix * fiy;
+                        avg += 0xFFFF * fix * fiy;
                     } else {
                         //avg = avg + (0.0 * pc);
                     }
                 }
             }
-            if (avg >= 0x80) {
+            /*if (avg >= 0x80) {
                 mx.buf[_row][_col] = '1';
             } else if (avg > 0x00) {
                 mx.buf[_row][_col] = '-';
             } else {
                 mx.buf[_row][_col] = '0';
-            }
-           //char _x = (char) (avg);
+            }*/
+            mx.buf[_row][_col] = (unsigned short) avg / 10000;
+            //char _x = (char) (avg);
            //printf(" %#2x ", (char) (_x & 0xff));
             avg = 0.0;
             _col++;

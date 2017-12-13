@@ -625,7 +625,7 @@ void normalize_test()
         //bmp_draw_buffer(&buffer, width, height, cell->col.start, cell->col.end);
         //bmp_draw_buffer(&buffer, width, height, cell->col.start, cell->col.end);
         //printf("-----\n");
-        shape shape1 = bmp_normalize_shape_get(cell); //TODO: pass cell
+        shape shape1 = bmp_normalize_shape_trim(cell); //TODO: pass cell
         bmp_print_shape(shape1);
         unsigned long int _row = 0;
         unsigned long int match = 0;
