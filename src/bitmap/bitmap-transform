@@ -1,0 +1,4 @@
+break bitmap.c:598
+break /home/nayana/code/sinhala-os/charset/vconi/src/bitmap/bitmap.c:646
+break /home/nayana/code/sinhala-os/charset/vconi/src/bitmap/bitmap.c:619
+break /home/nayana/code/sinhala-os/charset/vconi/src/bitmap/bitmap.c:635

@@ -120,7 +120,7 @@ typedef struct bmp_io_t {
 ptr_bmp_io bmp_io;
 
 typedef struct shape_t {
-    unsigned char buf[MAX_SHAPE_HEIGHT][MAX_SHAPE_WIDTH];
+    char buf[MAX_SHAPE_HEIGHT][MAX_SHAPE_WIDTH];
     unsigned short mask[MAX_SHAPE_HEIGHT];
 } shape, *ptr_shape;
 

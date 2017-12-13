@@ -1,7 +1,7 @@
 //
 // Created by nayana on 19/11/2560.
 //
-
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -209,12 +209,14 @@ unsigned char *bmp_char_matrix_get(struct stat_cell_t *cell)
         printf("heign witdth 0 \n");
         return NULL;
     }
-    unsigned char *matrix = malloc(sizeof(unsigned char *) * height * width);
+    unsigned char *matrix = malloc(sizeof(unsigned char) * height * width);
+    unsigned char **d2matrix = malloc(sizeof(unsigned char *) * height);
     unsigned char *ptrMatrix = matrix;
     unsigned char *buffer = bmp_matrix_get(cell);
     unsigned short charCounter = 0;
     while (_row < height) {
         _col = 0;
+        *(d2matrix+_row) = malloc(sizeof(unsigned char) * width);
         while (_col < width) {
             unsigned char cursor = *(buffer+charCounter);
             while (mask > 0 && _col < width) {
@@ -223,6 +225,7 @@ unsigned char *bmp_char_matrix_get(struct stat_cell_t *cell)
                 } else {
                     *matrix = '0';
                 }
+                *(*(d2matrix+_row)+_col) = *matrix;
                 matrix++;
                 mask = mask >> 1;
                 _col++;
@@ -235,6 +238,49 @@ unsigned char *bmp_char_matrix_get(struct stat_cell_t *cell)
     }
     free(buffer);
     return ptrMatrix;
+}
+
+unsigned char **bmp_char_matrix_get_2d(struct stat_cell_t *cell)
+{
+    unsigned long int height = (cell->row.end - cell->row.start) + 1;
+    unsigned long int _row = 0, _col = 0;
+    unsigned long int width = (cell->col.end - cell->col.start) + 1;
+    unsigned char mask = __bmp_col2mask_char(cell->col.start);
+
+    if (height * width == 0) {
+        printf("heign witdth 0 \n");
+        return NULL;
+    }
+    unsigned char *matrix = malloc(sizeof(unsigned char) * height * width);
+    unsigned char **d2matrix = malloc(sizeof(unsigned char *) * height);
+    unsigned char *ptrMatrix = matrix;
+    unsigned char *buffer = bmp_matrix_get(cell);
+    unsigned short charCounter = 0;
+    while (_row < height) {
+        _col = 0;
+        *(d2matrix+_row) = malloc(sizeof(unsigned char) * width);
+        while (_col < width) {
+            unsigned char cursor = *(buffer+charCounter);
+            while (mask > 0 && _col < width) {
+                if (mask == (cursor & mask) && mask > 0) {
+                    *matrix = '1'; //(cursor & mask);
+                } else {
+                    *matrix = '0';
+                }
+                *(*(d2matrix+_row)+_col) = *matrix;
+                matrix++;
+                mask = mask >> 1;
+                _col++;
+            }
+            mask = 0x80;
+            charCounter++;
+        }
+        mask = __bmp_col2mask_char(cell->col.start);
+        _row++;
+    }
+    free(buffer);
+    free(ptrMatrix);
+    return d2matrix;
 }
 
 unsigned char *bmp_matrix_get(struct stat_cell_t *cell)
@@ -534,13 +580,7 @@ void bmp_print_shape(shape shape1)
 {
     for (short _row = 0; _row < MAX_SHAPE_HEIGHT; _row++) {
         for (short _col = 0; _col < MAX_SHAPE_WIDTH; _col++) {
-            if (shape1.buf[_row][_col] != '0' && shape1.buf[_row][_col] != '1') continue;
-            if (shape1.buf[_row][_col] != '0') {
-                printf("1");
-            } else {
-                printf("0");
-            }
-            //printf("%#x", shape1.buf[_row][_col]);
+           printf("%c", shape1.buf[_row][_col]);
         }
         printf("\n");
     }
@@ -548,99 +588,78 @@ void bmp_print_shape(shape shape1)
 
 shape bmp_normalize_shape_get(struct stat_cell_t *cell)
 {
-    unsigned char *buff = bmp_char_matrix_get(cell);
-    unsigned long int _row = 0, _col = 0, _height = (cell->row.end - cell->row.start + 1);
-    unsigned long int _width = (cell->col.end - cell->col.start + 1);
-    shape matrix;
-    //unsigned char matrix[MAX_SHAPE_HEIGHT][MAX_SHAPE_WIDTH] = {};
-    int _x_factor = (_width / MAX_SHAPE_WIDTH) + 1;
-    int _y_factor = _height / MAX_SHAPE_HEIGHT;
-    unsigned short int _f = 0, _mcol = MAX_SHAPE_WIDTH - 1, _z = 0, _mrow = 0;
-    shape _shape; //_shape.buf[_row][_col];
-    unsigned short int _temp_buffer_length = MAX_SHAPE_WIDTH * _y_factor;
-    if (_temp_buffer_length  == 0 || _x_factor == 0 || _y_factor == 0) {
-        printf("too small \n");
-        memcpy(&matrix.buf, buff, sizeof(unsigned char) * _width * _height);
-        return matrix;
-    }
-    short _tx_row = 0;
-    //char (*tbufer)[MAX_SHAPE_WIDTH];
-    char tbufer[3][MAX_SHAPE_WIDTH] = {};
-    //char **ptTbuffer = tbufer;
-    unsigned short int cursor = 0, dcursor = 0;
-    short _trow = 0;
-    short _tcol = 0;
-    short _max_col = 0;
-    printf("x %d y %d w %d\n", _x_factor, _y_factor, _width);
-    //_x_factor = 3;
-    while (_row < _height) {
-        _col = 0;
-        _tcol = 0;
-        _trow++;
-        if (_trow >= _y_factor) _trow = 0;
-        while (_col < _width) {
-            float _avg = 0.0L;
-            if (_tcol > _max_col) _max_col = _tcol;
-            while (_f < _x_factor) {
-                //printf(".%d.", cursor);
-                if (*(buff + cursor) == '1') {
-                    _avg++;
-                }
-                cursor++;
-                _f++;
-            }
-            //printf(".%d.", _tcol);
-            tbufer[_trow][_tcol] = '0';
-            //printf("avg %f ..", _avg);
-            if (_avg / _x_factor > _x_factor / 2 ) {
-                tbufer[_trow][_tcol] = '1';
-            }
-            _col += _x_factor;
-            _tcol++;
-            dcursor++;
-            _f = 0;
+    unsigned char **d2matrix = bmp_char_matrix_get_2d(cell);
+    unsigned long int height = (cell->row.end - cell->row.start);
+    unsigned long int _row = 0, _col = 0, __row = 0, __col = 0;
+    unsigned long int width = (cell->col.end - cell->col.start);
 
-            if (dcursor % _temp_buffer_length == 0) {
-                _mcol = 0;
-                _z = 0;
-                short _a = 0;
-                while (_a < _y_factor) {
-                    _z = 0;
-                    while (_z <= _max_col) {
-                        //printf("%c", tbufer[_a][_z]);
-                        _z++;
-                    }
-                    //printf("\n");
-                    _a++;
+    shape mx;
+
+    double fx = (double) width / (MAX_SHAPE_WIDTH * 1.0);
+    double fix = 1 / fx;
+
+
+    //fx = fx*0.9999;
+   // float fyStep = fy*0.9999;
+   // double fix = 1/fx;
+    double fy = (double) height / (MAX_SHAPE_HEIGHT * 1.0);
+    double fiy = 1/fy;
+
+    printf("fx %f fy %f \n", fx, fy);
+    double avg = 0.0;
+    while (_row < MAX_SHAPE_HEIGHT) {
+        double sy1 = _row * (fy * 0.9999);
+        double sy2 = sy1 + (fy * 0.9999);
+        _col = 0;
+        avg = 0.0;
+        while (_col < MAX_SHAPE_WIDTH) {
+            double sx1 = _col * (fx * 0.9999);
+            double sx2 = sx1 + (fx * 0.9999);
+           // printf("row - %f %f \n", floor(sy1), ceil(sy2));
+            for (int j = floor(sy1); j < ceil(sy2); j++) {
+                int dy = 1;
+
+                if (sy1 > j) {
+                    dy = dy - (sy1 - j);
                 }
-                //printf("------\n");
-                _z = 0;
-                while(_z <= _max_col) {
-                    _f = 0;
-                    short _n = 0;
-                    while (_f < _y_factor) {
-                        if (tbufer[_f][_mcol] == '1') _n++;
-                        _f++;
+                if (sy2 < j + 1) {
+                    dy = dy - (j+1-sy2);
+                }
+               // printf("col - %f %f \n", floor(sx1), ceil(sx2));
+                for (int i = floor(sx1); i < (ceil(sx2)); i++) {
+                    int dx = 1;
+                    if (sx1 > i) {
+                        dx = dx - (sx1 - i);
                     }
-                    matrix.buf[_mrow][_mcol] = '3';
-                    if ((_n / _y_factor) > 0.0) {
-                        //printf("1");
-                        matrix.buf[_mrow][_mcol] = '1';
+                    if (sx2 < i + 1) {
+                        dx = dx - (i+1-sx2);
+                    }
+
+                    unsigned char cursor = *(*(d2matrix+j)+i);
+                   // printf("[%d,%d %c]", j, i, cursor);
+                    //double pc = (double) dx * fi2;
+                    if (cursor == '1') {
+                        avg += 0xFF * fix * fiy;
                     } else {
-                        //printf("0");
-                        matrix.buf[_mrow][_mcol] = '0';
+                        //avg = avg + (0.0 * pc);
                     }
-                    _mcol++;
-                    _z++;
                 }
-               // printf("\n");
-                _mrow++;
             }
+            if (avg >= 0x80) {
+                mx.buf[_row][_col] = '1';
+            } else if (avg > 0x00) {
+                mx.buf[_row][_col] = '-';
+            } else {
+                mx.buf[_row][_col] = '0';
+            }
+           //char _x = (char) (avg);
+           //printf(" %#2x ", (char) (_x & 0xff));
+            avg = 0.0;
+            _col++;
         }
-        cursor = (_row * _width);
-        _tx_row++;
         _row++;
     }
-    if (buff != NULL) free(buff);
-    return matrix;
+
+    free(d2matrix);
+    return mx;
 }
